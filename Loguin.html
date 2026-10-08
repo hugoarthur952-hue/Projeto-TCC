@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>GarimpoTech - 16 Bit</title>
+
+
+    <!-- =====================================================
+         FONTE PIXEL
+    ====================================================== -->
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+        rel="stylesheet"
+    >
+
+
+    <style>
+
+        /* =====================================================
+           CONFIGURAÇÕES GERAIS
+        ===================================================== */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+
+            min-height: 100vh;
+
+            background: #071b3a;
+
+            color: white;
+
+            font-family:
+                "Press Start 2P",
+                monospace;
+
+            overflow: hidden;
+        }
+
+
+        /* =====================================================
+           TELA PRINCIPAL
+        ===================================================== */
+
+        .game-screen {
+
+            position: relative;
+
+            width: 100%;
+
+            min-height: 100vh;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            overflow: hidden;
+
+            background:
+
+                linear-gradient(
+                    rgba(7, 27, 58, 0.94),
+                    rgba(7, 27, 58, 0.98)
+                ),
+
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 3px,
+                    rgba(255,255,255,0.025) 3px,
+                    rgba(255,255,255,0.025) 6px
+                );
+        }
+
+
+        /* =====================================================
+           GRID
+        ===================================================== */
+
+        .pixel-grid {
+
+            position: absolute;
+
+            inset: 0;
+
+            background-image:
+
+                linear-gradient(
+                    rgba(255,255,255,0.025) 1px,
+                    transparent 1px
+                ),
+
+                linear-gradient(
+                    90deg,
+                    rgba(255,255,255,0.025) 1px,
+                    transparent 1px
+                );
+
+            background-size: 32px 32px;
+
+            opacity: 0.5;
+        }
+
+
+        /* =====================================================
+           DECORAÇÕES
+        ===================================================== */
+
+        .pixel {
+
+            position: absolute;
+
+            background: #ff7a00;
+
+            opacity: 0.35;
+        }
+
+        .pixel-1 {
+
+            width: 16px;
+            height: 16px;
+
+            top: 12%;
+            left: 12%;
+        }
+
+        .pixel-2 {
+
+            width: 8px;
+            height: 8px;
+
+            top: 20%;
+            left: 16%;
+        }
+
+        .pixel-3 {
+
+            width: 24px;
+            height: 8px;
+
+            bottom: 18%;
+            right: 14%;
+        }
+
+        .pixel-4 {
+
+            width: 8px;
+            height: 24px;
+
+            bottom: 25%;
+            right: 18%;
+        }
+
+
+        /* =====================================================
+           CHIP
+        ===================================================== */
+
+        .chip {
+
+            position: absolute;
+
+            width: 100px;
+            height: 100px;
+
+            border: 4px solid
+                rgba(255,122,0,0.15);
+
+            background:
+                rgba(255,122,0,0.025);
+        }
+
+        .chip::before,
+        .chip::after {
+
+            content: "";
+
+            position: absolute;
+
+            background:
+                rgba(255,122,0,0.2);
+        }
+
+        .chip::before {
+
+            width: 140px;
+            height: 4px;
+
+            top: 44px;
+            left: -24px;
+        }
+
+        .chip::after {
+
+            width: 4px;
+            height: 140px;
+
+            left: 44px;
+            top: -24px;
+        }
+
+        .chip-1 {
+
+            top: 8%;
+            right: 10%;
+
+            transform: rotate(10deg);
+        }
+
+        .chip-2 {
+
+            bottom: 8%;
+            left: 8%;
+
+            transform: rotate(-15deg);
+        }
+
+
+        /* =====================================================
+           CAIXA PRINCIPAL
+        ===================================================== */
+
+        .game-box {
+
+            position: relative;
+
+            width: 900px;
+
+            min-height: 620px;
+
+            background: #0d2a56;
+
+            border: 6px solid #ff7a00;
+
+            box-shadow:
+
+                0 0 0 6px #071b3a,
+
+                0 0 0 10px #ff7a00,
+
+                12px 12px 0 #000;
+
+            display: flex;
+
+            flex-direction: column;
+
+            justify-content: space-between;
+
+            padding: 45px;
+
+            z-index: 10;
+
+            animation:
+                screenAppear 0.7s steps(6);
+        }
+
+
+        @keyframes screenAppear {
+
+            from {
+
+                opacity: 0;
+
+                transform: scale(0.8);
+            }
+
+            to {
+
+                opacity: 1;
+
+                transform: scale(1);
+            }
+        }
+
+
+        /* =====================================================
+           CABEÇALHO
+        ===================================================== */
+
+        .header {
+
+            text-align: center;
+        }
+
+        .mini-text {
+
+            color: #ff9d3d;
+
+            font-size: 10px;
+
+            margin-bottom: 18px;
+
+            letter-spacing: 2px;
+        }
+
+        .logo {
+
+            font-size: 42px;
+
+            color: white;
+
+            text-shadow:
+
+                5px 5px 0 #000,
+
+                8px 8px 0 #071b3a;
+
+            letter-spacing: 1px;
+        }
+
+        .logo span {
+
+            color: #ff7a00;
+        }
+
+        .subtitle {
+
+            margin-top: 18px;
+
+            color: #aebbd0;
+
+            font-size: 10px;
+
+            line-height: 2;
+        }
+
+
+        /* =====================================================
+           LINHA PIXEL
+        ===================================================== */
+
+        .pixel-line {
+
+            width: 100%;
+
+            height: 8px;
+
+            margin: 30px 0;
+
+            background:
+
+                repeating-linear-gradient(
+                    90deg,
+                    #ff7a00 0px,
+                    #ff7a00 12px,
+                    transparent 12px,
+                    transparent 20px
+                );
+        }
+
+
+        /* =====================================================
+           PÁGINAS
+        ===================================================== */
+
+        .page {
+
+            display: none;
+
+            width: 100%;
+
+            animation:
+                pageAppear 0.3s steps(4);
+        }
+
+        .page.active {
+
+            display: block;
+        }
+
+        @keyframes pageAppear {
+
+            from {
+
+                opacity: 0;
+
+                transform: translateX(15px);
+            }
+
+            to {
+
+                opacity: 1;
+
+                transform: translateX(0);
+            }
+        }
+
+
+        /* =====================================================
+           MENU PRINCIPAL
+        ===================================================== */
+
+        .menu {
+
+            width: 480px;
+
+            max-width: 100%;
+
+            margin: auto;
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 18px;
+        }
+
+
+        /* =====================================================
+           BOTÕES
+        ===================================================== */
+
+        .menu-button {
+
+            position: relative;
+
+            width: 100%;
+
+            height: 65px;
+
+            border: 4px solid #ff7a00;
+
+            background: #071b3a;
+
+            color: white;
+
+            font-family:
+                "Press Start 2P",
+                monospace;
+
+            font-size: 13px;
+
+            cursor: pointer;
+
+            text-decoration: none;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            transition:
+                transform 0.1s,
+                background 0.1s;
+        }
+
+        .menu-button:hover {
+
+            background: #ff7a00;
+
+            color: #071b3a;
+
+            transform:
+                translateX(8px);
+
+            box-shadow:
+                8px 8px 0 #000;
+        }
+
+        .menu-button:active {
+
+            transform:
+                translateX(4px)
+                translateY(4px);
+
+            box-shadow:
+                4px 4px 0 #000;
+        }
+
+
+        /* =====================================================
+           CURSOR
+        ===================================================== */
+
+        .menu-button::before {
+
+            content: "▶";
+
+            position: absolute;
+
+            left: 18px;
+
+            color: #ff7a00;
+
+            opacity: 0;
+
+            transition: 0.1s;
+        }
+
+        .menu-button:hover::before {
+
+            opacity: 1;
+        }
+
+
+        /* =====================================================
+           BOTÃO LOGIN
+        ===================================================== */
+
+        .button-login {
+
+            background: #ff7a00;
+
+            color: #071b3a;
+
+            border-color: #ff9d3d;
+        }
+
+        .button-login:hover {
+
+            background: #ff9d3d;
+
+            color: #071b3a;
+        }
+
+
+        /* =====================================================
+           FORMULÁRIOS
+        ===================================================== */
+
+        .form-box {
+
+            width: 480px;
+
+            max-width: 100%;
+
+            margin: auto;
+        }
+
+        .page-title {
+
+            text-align: center;
+
+            color: #ff7a00;
+
+            font-size: 20px;
+
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+
+            margin-bottom: 18px;
+        }
+
+        .input-group label {
+
+            display: block;
+
+            color: #aebbd0;
+
+            font-size: 9px;
+
+            margin-bottom: 10px;
+        }
+
+        .pixel-input {
+
+            width: 100%;
+
+            height: 55px;
+
+            border: 4px solid #ff7a00;
+
+            background: #071b3a;
+
+            color: white;
+
+            padding: 0 15px;
+
+            font-family:
+                "Press Start 2P",
+                monospace;
+
+            font-size: 9px;
+
+            outline: none;
+        }
+
+        .pixel-input:focus {
+
+            background: #102f60;
+
+            box-shadow:
+                5px 5px 0 #000;
+        }
+
+        .pixel-input::placeholder {
+
+            color: #496383;
+        }
+
+
+        /* =====================================================
+           BOTÃO FORMULÁRIO
+        ===================================================== */
+
+        .form-button {
+
+            width: 100%;
+
+            height: 58px;
+
+            border: 4px solid #ff9d3d;
+
+            background: #ff7a00;
+
+            color: #071b3a;
+
+            font-family:
+                "Press Start 2P",
+                monospace;
+
+            font-size: 10px;
+
+            cursor: pointer;
+
+            margin-top: 5px;
+        }
+
+        .form-button:hover {
+
+            background: #ff9d3d;
+
+            box-shadow:
+                6px 6px 0 #000;
+        }
+
+
+        /* =====================================================
+           VOLTAR
+        ===================================================== */
+
+        .back-button {
+
+            display: block;
+
+            margin: 22px auto 0;
+
+            background: none;
+
+            border: none;
+
+            color: #ff7a00;
+
+            font-family:
+                "Press Start 2P",
+                monospace;
+
+            font-size: 8px;
+
+            cursor: pointer;
+        }
+
+        .back-button:hover {
+
+            color: #ff9d3d;
+        }
+
+
+        /* =====================================================
+           MENSAGENS
+        ===================================================== */
+
+        .message {
+
+            min-height: 20px;
+
+            margin-top: 15px;
+
+            text-align: center;
+
+            font-size: 8px;
+
+            line-height: 1.8;
+        }
+
+        .message.success {
+
+            color: #6dff8b;
+        }
+
+        .message.error {
+
+            color: #ff5c5c;
+        }
+
+
+        /* =====================================================
+           EXPLORAR
+        ===================================================== */
+
+        .explore {
+
+            width: 100%;
+        }
+
+        .products {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
+            gap: 15px;
+
+            margin-top: 20px;
+        }
+
+        .product {
+
+            background: #071b3a;
+
+            border: 3px solid #ff7a00;
+
+            padding: 15px;
+
+            min-height: 130px;
+
+            display: flex;
+
+            flex-direction: column;
+
+            justify-content: space-between;
+        }
+
+        .product-name {
+
+            color: white;
+
+            font-size: 9px;
+
+            line-height: 1.7;
+        }
+
+        .product-price {
+
+            color: #ff9d3d;
+
+            font-size: 11px;
+        }
+
+        .product-tag {
+
+            color: #7e91ad;
+
+            font-size: 7px;
+        }
+
+
+        /* =====================================================
+           RODAPÉ
+        ===================================================== */
+
+        .footer {
+
+            text-align: center;
+
+            margin-top: 30px;
+
+            color: #7e91ad;
+
+            font-size: 8px;
+
+            line-height: 2;
+        }
+
+        .press-start {
+
+            color: #ff7a00;
+
+            animation:
+                blink 1.2s
+                steps(2)
+                infinite;
+        }
+
+        @keyframes blink {
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+
+        /* =====================================================
+           VERSÃO
+        ===================================================== */
+
+        .version {
+
+            position: absolute;
+
+            right: 18px;
+
+            bottom: 12px;
+
+            color: #496383;
+
+            font-size: 7px;
+        }
+
+
+        /* =====================================================
+           RESPONSIVIDADE
+        ===================================================== */
+
+        @media (max-width: 700px) {
+
+            body {
+                overflow: auto;
+            }
+
+            .game-screen {
+
+                padding: 30px 0;
+
+                min-height: 100vh;
+            }
+
+            .game-box {
+
+                width: 90%;
+
+                min-height: 580px;
+
+                padding: 30px 20px;
+
+                border-width: 4px;
+
+                box-shadow:
+
+                    0 0 0 4px #071b3a,
+
+                    0 0 0 7px #ff7a00,
+
+                    8px 8px 0 #000;
+            }
+
+            .logo {
+
+                font-size: 27px;
+            }
+
+            .mini-text {
+
+                font-size: 8px;
+            }
+
+            .subtitle {
+
+                font-size: 8px;
+            }
+
+            .menu-button {
+
+                height: 58px;
+
+                font-size: 10px;
+            }
+
+            .pixel-line {
+
+                margin: 22px 0;
+            }
+
+            .products {
+
+                grid-template-columns:
+                    1fr;
+            }
+        }
+
+
+        @media (max-width: 450px) {
+
+            .game-box {
+
+                min-height: 540px;
+
+                padding: 25px 15px;
+            }
+
+            .logo {
+
+                font-size: 21px;
+
+                text-shadow:
+                    3px 3px 0 #000;
+            }
+
+            .menu-button {
+
+                font-size: 8px;
+
+                height: 55px;
+            }
+
+            .subtitle {
+
+                font-size: 7px;
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- =====================================================
+         TELA PRINCIPAL
+    ====================================================== -->
+
+    <div class="game-screen">
+
+
+        <!-- GRID -->
+
+        <div class="pixel-grid"></div>
+
+
+        <!-- DECORAÇÕES -->
+
+        <div class="pixel pixel-1"></div>
+
+        <div class="pixel pixel-2"></div>
+
+        <div class="pixel pixel-3"></div>
+
+        <div class="pixel pixel-4"></div>
+
+
+        <div class="chip chip-1"></div>
+
+        <div class="chip chip-2"></div>
+
+
+
+        <!-- =================================================
+             CAIXA DO JOGO
+        ================================================== -->
+
+        <main class="game-box">
+
+
+            <!-- =================================================
+                 PÁGINA INICIAL
+            ================================================== -->
+
+            <section
+                id="home"
+                class="page active"
+            >
+
+                <header class="header">
+
+                    <div class="mini-text">
+
+                        ★ BEM-VINDO AO ★
+
+                    </div>
+
+
+                    <h1 class="logo">
+
+                        GARIMPO<span>TECH</span>
+
+                    </h1>
+
+
+                    <p class="subtitle">
+
+                        SUA AVENTURA PELO MUNDO DO HARDWARE COMEÇA AQUI
+
+                    </p>
+
+                </header>
+
+
+                <div class="pixel-line"></div>
+
+
+                <nav class="menu">
+
+
+                    <button
+                        class="menu-button button-login"
+                        onclick="showPage('login')"
+                    >
+
+                        ENTRAR
+
+                    </button>
+
+
+                    <button
+                        class="menu-button"
+                        onclick="showPage('register')"
+                    >
+
+                        CRIAR CONTA
+
+                    </button>
+
+
+                    <button
+                        class="menu-button"
+                        onclick="showPage('explore')"
+                    >
+
+                        EXPLORAR COMO VISITANTE
+
+                    </button>
+
+
+                </nav>
+
+
+                <footer class="footer">
+
+                    <div class="press-start">
+
+                        ▶ ESCOLHA UMA OPÇÃO ◀
+
+                    </div>
+
+                    <br>
+
+                    GARIMPOTECH © 2026
+
+                </footer>
+
+            </section>
+
+
+
+            <!-- =================================================
+                 LOGIN
+            ================================================== -->
+
+            <section
+                id="login"
+                class="page"
+            >
+
+                <div class="form-box">
+
+                    <h2 class="page-title">
+
+                        LOGIN
+
+                    </h2>
+
+
+                    <form id="loginForm">
+
+
+                        <div class="input-group">
+
+                            <label for="loginEmail">
+
+                                E-MAIL
+
+                            </label>
+
+                            <input
+                                type="email"
+                                id="loginEmail"
+                                class="pixel-input"
+                                placeholder="SEU E-MAIL"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="input-group">
+
+                            <label for="loginPassword">
+
+                                SENHA
+
+                            </label>
+
+                            <input
+                                type="password"
+                                id="loginPassword"
+                                class="pixel-input"
+                                placeholder="SUA SENHA"
+                                required
+                            >
+
+                        </div>
+
+
+                        <button
+                            type="submit"
+                            class="form-button"
+                        >
+
+                            ENTRAR NO JOGO
+
+                        </button>
+
+
+                    </form>
+
+
+                    <div
+                        id="loginMessage"
+                        class="message"
+                    ></div>
+
+
+                    <button
+                        class="back-button"
+                        onclick="showPage('home')"
+                    >
+
+                        ◀ VOLTAR
+
+                    </button>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- =================================================
+                 CADASTRO
+            ================================================== -->
+
+            <section
+                id="register"
+                class="page"
+            >
+
+                <div class="form-box">
+
+                    <h2 class="page-title">
+
+                        CRIAR CONTA
+
+                    </h2>
+
+
+                    <form id="registerForm">
+
+
+                        <div class="input-group">
+
+                            <label for="registerName">
+
+                                NOME
+
+                            </label>
+
+                            <input
+                                type="text"
+                                id="registerName"
+                                class="pixel-input"
+                                placeholder="SEU NOME"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="input-group">
+
+                            <label for="registerEmail">
+
+                                E-MAIL
+
+                            </label>
+
+                            <input
+                                type="email"
+                                id="registerEmail"
+                                class="pixel-input"
+                                placeholder="SEU E-MAIL"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="input-group">
+
+                            <label for="registerPassword">
+
+                                SENHA
+
+                            </label>
+
+                            <input
+                                type="password"
+                                id="registerPassword"
+                                class="pixel-input"
+                                placeholder="CRIE UMA SENHA"
+                                minlength="6"
+                                required
+                            >
+
+                        </div>
+
+
+                        <button
+                            type="submit"
+                            class="form-button"
+                        >
+
+                            CRIAR CONTA
+
+                        </button>
+
+
+                    </form>
+
+
+                    <div
+                        id="registerMessage"
+                        class="message"
+                    ></div>
+
+
+                    <button
+                        class="back-button"
+                        onclick="showPage('home')"
+                    >
+
+                        ◀ VOLTAR
+
+                    </button>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- =================================================
+                 EXPLORAR
+            ================================================== -->
+
+            <section
+                id="explore"
+                class="page"
+            >
+
+                <div class="explore">
+
+                    <h2 class="page-title">
+
+                        GARIMPOS
+
+                    </h2>
+
+
+                    <div class="products">
+
+
+                        <div class="product">
+
+                            <div class="product-name">
+
+                                RTX 3060 12GB
+
+                            </div>
+
+                            <div class="product-tag">
+
+                                PLACA DE VÍDEO
+
+                            </div>
+
+                            <div class="product-price">
+
+                                R$ 1.450
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="product">
+
+                            <div class="product-name">
+
+                                Ryzen 5 5600
+
+                            </div>
+
+                            <div class="product-tag">
+
+                                PROCESSADOR
+
+                            </div>
+
+                            <div class="product-price">
+
+                                R$ 650
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="product">
+
+                            <div class="product-name">
+
+                                16GB DDR4
+
+                            </div>
+
+                            <div class="product-tag">
+
+                                MEMÓRIA RAM
+
+                            </div>
+
+                            <div class="product-price">
+
+                                R$ 220
+
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <button
+                        class="back-button"
+                        onclick="showPage('home')"
+                    >
+
+                        ◀ VOLTAR AO MENU
+
+                    </button>
+
+                </div>
+
+            </section>
+
+
+            <div class="version">
+
+                v1.0
+
+            </div>
+
+
+        </main>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         JAVASCRIPT
+    ====================================================== -->
+
+    <script>
+
+
+        /* =====================================================
+           TROCAR DE PÁGINA
+        ===================================================== */
+
+        function showPage(pageId) {
+
+
+            const pages =
+                document.querySelectorAll(".page");
+
+
+            pages.forEach(function(page) {
+
+                page.classList.remove("active");
+
+            });
+
+
+            const selectedPage =
+                document.getElementById(pageId);
+
+
+            if (selectedPage) {
+
+                selectedPage.classList.add("active");
+
+            }
+
+        }
+
+
+
+        /* =====================================================
+           CADASTRO
+        ===================================================== */
+
+        document
+            .getElementById("registerForm")
+            .addEventListener("submit", function(event) {
+
+
+                event.preventDefault();
+
+
+                const name =
+                    document
+                        .getElementById("registerName")
+                        .value
+                        .trim();
+
+
+                const email =
+                    document
+                        .getElementById("registerEmail")
+                        .value
+                        .trim();
+
+
+                const password =
+                    document
+                        .getElementById("registerPassword")
+                        .value;
+
+
+                const message =
+                    document
+                        .getElementById("registerMessage");
+
+
+                if (
+                    !name ||
+                    !email ||
+                    !password
+                ) {
+
+                    message.textContent =
+                        "PREENCHA TODOS OS CAMPOS.";
+
+                    message.className =
+                        "message error";
+
+                    return;
+
+                }
+
+
+                if (password.length < 6) {
+
+                    message.textContent =
+                        "A SENHA DEVE TER PELO MENOS 6 CARACTERES.";
+
+                    message.className =
+                        "message error";
+
+                    return;
+
+                }
+
+
+                /*
+                    SOMENTE PARA TESTE.
+
+                    Posteriormente substituiremos
+                    esta parte pelo Supabase.
+                */
+
+                const user = {
+
+                    name: name,
+
+                    email: email,
+
+                    password: password
+
+                };
+
+
+                localStorage.setItem(
+                    "garimpoUser",
+                    JSON.stringify(user)
+                );
+
+
+                message.textContent =
+                    "CONTA CRIADA! AGORA VOCÊ PODE ENTRAR.";
+
+                message.className =
+                    "message success";
+
+
+                document
+                    .getElementById("registerForm")
+                    .reset();
+
+            });
+
+
+
+        /* =====================================================
+           LOGIN
+        ===================================================== */
+
+        document
+            .getElementById("loginForm")
+            .addEventListener("submit", function(event) {
+
+
+                event.preventDefault();
+
+
+                const email =
+                    document
+                        .getElementById("loginEmail")
+                        .value
+                        .trim();
+
+
+                const password =
+                    document
+                        .getElementById("loginPassword")
+                        .value;
+
+
+                const message =
+                    document
+                        .getElementById("loginMessage");
+
+
+                const savedUser =
+                    localStorage.getItem("garimpoUser");
+
+
+                if (!savedUser) {
+
+                    message.textContent =
+                        "NENHUMA CONTA ENCONTRADA. CRIE UMA PRIMEIRO.";
+
+                    message.className =
+                        "message error";
+
+                    return;
+
+                }
+
+
+                const user =
+                    JSON.parse(savedUser);
+
+
+                if (
+                    email === user.email &&
+                    password === user.password
+                ) {
+
+                    message.textContent =
+                        "LOGIN REALIZADO! BEM-VINDO, " +
+                        user.name.toUpperCase() +
+                        "!";
+
+                    message.className =
+                        "message success";
+
+
+                    setTimeout(function() {
+
+                        showPage("explore");
+
+                    }, 1000);
+
+                }
+
+                else {
+
+                    message.textContent =
+                        "E-MAIL OU SENHA INCORRETOS.";
+
+                    message.className =
+                        "message error";
+
+                }
+
+            });
+
+
+    </script>
+
+</body>
+
+</html>
