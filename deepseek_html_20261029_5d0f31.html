@@ -1,0 +1,3649 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>ByteHunt — Garimpo de Peças</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+<style>
+
+/* =========================================================
+   CONFIGURAÇÕES GERAIS
+========================================================= */
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; }
+
+:root {
+    --azul: #0a2540;
+    --azul-hover: #143a63;
+    --laranja: #e8590c;
+    --laranja-hover: #c94b08;
+    --branco: #ffffff;
+    --fundo: #eef1f4;
+    --card: #ffffff;
+    --borda: #d0d7de;
+    --borda-forte: #b8c0c9;
+    --texto: #1c1f23;
+    --texto-2: #57606a;
+    --texto-3: #8b949e;
+    --verde: #1a7f37;
+    --vermelho: #b42318;
+}
+
+body { background: var(--fundo); color: var(--texto); font-size: 13px; line-height: 1.5; }
+
+button, input, textarea, select { font-family: inherit; font-size: 13px; }
+
+button { cursor: pointer; border: none; background: none; }
+
+a { color: var(--azul); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+
+/* =========================================================
+   TELA DE ENTRADA 16-BIT
+========================================================= */
+
+#authScreen {
+    position: fixed; inset: 0; z-index: 99999;
+    background: linear-gradient(rgba(5, 15, 35, 0.92), rgba(5, 15, 35, 0.92));
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px; overflow-y: auto;
+}
+
+.auth-hidden { display: none !important; }
+
+.pixel-screen {
+    width: 100%; max-width: 900px; min-height: 620px;
+    background: #071b3a;
+    border: 6px solid #ffffff;
+    box-shadow: 0 0 0 6px #ff7a00, 12px 12px 0 #000000;
+    padding: 35px; position: relative; color: white;
+    display: flex; flex-direction: column; justify-content: center; text-align: center;
+}
+
+.pixel-screen::before {
+    content: ""; position: absolute; inset: 12px;
+    border: 3px dashed rgba(255,255,255,0.25); pointer-events: none;
+}
+
+.pixel-logo {
+    font-family: "Press Start 2P", monospace;
+    font-size: clamp(28px, 6vw, 58px);
+    color: white; text-shadow: 5px 5px 0 #000000;
+    margin-bottom: 35px; position: relative;
+}
+
+.pixel-logo span { color: #ff7a00; }
+
+.pixel-title {
+    font-family: "Press Start 2P", monospace;
+    font-size: clamp(13px, 2vw, 20px);
+    line-height: 1.8; margin-bottom: 15px; position: relative;
+}
+
+.pixel-subtitle {
+    font-family: "Press Start 2P", monospace;
+    color: #ff9d3d; font-size: 9px; line-height: 2;
+    max-width: 650px; margin: 0 auto 35px; position: relative;
+}
+
+.pixel-buttons {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 14px; position: relative;
+}
+
+.pixel-btn {
+    width: 100%; max-width: 380px; padding: 18px 20px;
+    background: #e8590c; color: white;
+    border: 4px solid white; box-shadow: 6px 6px 0 #000000;
+    font-family: "Press Start 2P", monospace;
+    font-size: 10px; transition: 0.1s; text-transform: uppercase;
+}
+
+.pixel-btn:hover { background: #ff7a00; transform: translate(3px, 3px); box-shadow: 3px 3px 0 #000000; }
+.pixel-btn.secondary { background: #12396f; }
+.pixel-btn.secondary:hover { background: #1d4f8f; }
+.pixel-btn.green { background: #1a7f37; }
+
+.pixel-footer {
+    position: absolute; bottom: 18px; left: 0; right: 0;
+    font-family: "Press Start 2P", monospace;
+    font-size: 7px; color: #8b949e;
+}
+
+
+/* =========================================================
+   TELAS DE LOGIN / CADASTRO
+========================================================= */
+
+.auth-form { width: 100%; max-width: 460px; margin: 0 auto; position: relative; z-index: 2; }
+
+.auth-form h2 {
+    font-family: "Press Start 2P", monospace;
+    font-size: 16px; color: #ff7a00; margin-bottom: 28px; line-height: 1.7;
+}
+
+.auth-field { margin-bottom: 18px; text-align: left; }
+
+.auth-field label {
+    display: block; font-family: "Press Start 2P", monospace;
+    font-size: 8px; color: white; margin-bottom: 9px;
+}
+
+.password-box { position: relative; }
+
+.auth-field input {
+    width: 100%; height: 48px; padding: 0 48px 0 13px;
+    border: 3px solid #8b949e; outline: none;
+    background: #ffffff; color: #071b3a;
+    font-size: 14px; border-radius: 0;
+}
+
+.auth-field input:focus { border-color: #ff7a00; box-shadow: 0 0 0 3px rgba(255,122,0,0.25); }
+
+.password-toggle {
+    position: absolute; right: 5px; top: 5px;
+    width: 38px; height: 38px;
+    color: #071b3a; background: #eeeeee; font-size: 17px;
+    border-left: 2px solid #cccccc;
+}
+
+.password-toggle:hover { background: #dddddd; }
+
+.auth-message {
+    display: none; margin-bottom: 15px; padding: 12px;
+    border: 2px solid; font-family: "Press Start 2P", monospace;
+    font-size: 7px; line-height: 1.8; text-align: left;
+}
+
+.auth-message.show { display: block; }
+.auth-message.error { background: #421515; border-color: #ff4d4d; color: #ffb3b3; }
+.auth-message.success { background: #123d25; border-color: #35c76f; color: #a9ffc8; }
+
+.auth-back {
+    margin-top: 20px; color: #ffffff;
+    font-family: "Press Start 2P", monospace;
+    font-size: 8px; text-decoration: underline;
+}
+
+.auth-back:hover { color: #ff7a00; }
+
+
+/* =========================================================
+   APLICATIVO / HEADER
+========================================================= */
+
+#app { display: block; }
+#app.app-hidden { display: none; }
+
+.topbar {
+    position: sticky; top: 0; height: 52px;
+    background: var(--azul); color: white;
+    display: flex; align-items: center; padding: 0 20px; gap: 18px;
+    z-index: 1000; border-bottom: 2px solid var(--laranja);
+}
+
+.topbar-logo { font-size: 17px; font-weight: bold; color: white; letter-spacing: 0.3px; flex-shrink: 0; }
+.topbar-logo span { color: var(--laranja); }
+
+.topbar-search { flex: 1; max-width: 560px; display: flex; height: 32px; }
+
+.topbar-search input {
+    flex: 1; padding: 0 12px;
+    border: 1px solid var(--borda-forte); border-right: none;
+    border-radius: 3px 0 0 3px; outline: none;
+    font-size: 13px; color: var(--texto);
+}
+
+.topbar-search input:focus { border-color: var(--laranja); }
+
+.topbar-search button {
+    padding: 0 16px; background: var(--laranja); color: white;
+    font-weight: bold; font-size: 12px;
+    border-radius: 0 3px 3px 0; letter-spacing: 0.3px;
+}
+
+.topbar-search button:hover { background: var(--laranja-hover); }
+
+.topbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+.topbar-link {
+    color: white; padding: 7px 12px; font-size: 13px;
+    border-radius: 3px; transition: background 0.15s; cursor: pointer;
+}
+
+.topbar-link:hover { background: rgba(255,255,255,0.1); text-decoration: none; }
+
+.topbar-link.primary { background: var(--laranja); color: white; font-weight: bold; }
+.topbar-link.primary:hover { background: var(--laranja-hover); }
+
+.topbar-user {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 10px; border-radius: 3px;
+    color: white; cursor: pointer;
+}
+
+.topbar-user:hover { background: rgba(255,255,255,0.1); }
+
+.topbar-avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--laranja); color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: 11px; overflow: hidden; flex-shrink: 0;
+}
+
+.topbar-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.logout-button {
+    color: white !important;
+    background: rgba(232,89,12,0.15);
+    border: 1px solid rgba(232,89,12,0.5);
+    padding: 6px 10px; border-radius: 3px;
+    font-size: 11px; cursor: pointer;
+}
+
+.logout-button:hover { background: var(--laranja); }
+
+
+/* =========================================================
+   LAYOUT
+========================================================= */
+
+.layout {
+    display: grid; grid-template-columns: 200px 1fr 280px;
+    gap: 16px; max-width: 1280px; margin: 16px auto;
+    padding: 0 16px; align-items: start;
+}
+
+.sidebar-left {
+    position: sticky; top: 68px;
+    background: var(--card); border: 1px solid var(--borda); border-radius: 4px;
+}
+
+.side-section { padding: 10px 0; border-bottom: 1px solid var(--borda); }
+.side-section:last-child { border-bottom: none; }
+
+.side-title {
+    font-size: 11px; text-transform: uppercase; color: var(--texto-3);
+    font-weight: bold; letter-spacing: 0.5px; padding: 6px 16px;
+}
+
+.nav-item {
+    display: flex; align-items: center; padding: 8px 16px;
+    color: var(--texto); font-size: 13px; cursor: pointer;
+    border-left: 3px solid transparent; transition: background 0.1s;
+}
+
+.nav-item:hover { background: var(--fundo); text-decoration: none; }
+
+.nav-item.active {
+    background: var(--fundo); border-left-color: var(--laranja);
+    font-weight: bold; color: var(--azul);
+}
+
+.nav-item .count { margin-left: auto; color: var(--texto-3); font-size: 11px; }
+
+
+/* =========================================================
+   TABS
+========================================================= */
+
+.tabs {
+    display: flex; background: var(--card);
+    border: 1px solid var(--borda); border-radius: 4px;
+    padding: 3px; margin-bottom: 12px; width: fit-content;
+}
+
+.tab {
+    padding: 6px 16px; border-radius: 3px;
+    font-size: 12px; font-weight: bold; color: var(--texto-2);
+    cursor: pointer; transition: 0.1s;
+}
+
+.tab:hover { color: var(--texto); background: var(--fundo); }
+.tab.active { background: var(--azul); color: white; }
+
+
+/* =========================================================
+   SIDEBAR DIREITA
+========================================================= */
+
+.sidebar-right {
+    position: sticky; top: 68px;
+    display: flex; flex-direction: column; gap: 12px;
+}
+
+.box { background: var(--card); border: 1px solid var(--borda); border-radius: 4px; }
+
+.box-head {
+    padding: 10px 14px; border-bottom: 1px solid var(--borda);
+    font-weight: bold; font-size: 12px; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--azul); background: var(--fundo);
+}
+
+.box-body { padding: 12px 14px; }
+
+.stat-row {
+    display: flex; justify-content: space-between;
+    padding: 6px 0; font-size: 12px; border-bottom: 1px solid var(--borda);
+}
+
+.stat-row:last-child { border-bottom: none; }
+.stat-row span:first-child { color: var(--texto-2); }
+.stat-row span:last-child { font-weight: bold; color: var(--azul); }
+
+.rank-item {
+    display: flex; gap: 10px; padding: 8px 0;
+    border-bottom: 1px solid var(--borda); cursor: pointer; font-size: 12px;
+}
+
+.rank-item:last-child { border-bottom: none; }
+.rank-item:hover strong { color: var(--laranja); }
+.rank-num { color: var(--texto-3); font-weight: bold; width: 14px; flex-shrink: 0; }
+.rank-info strong { display: block; color: var(--texto); margin-bottom: 1px; font-size: 12px; }
+.rank-info small { color: var(--texto-3); font-size: 11px; }
+
+.cat-row {
+    display: flex; justify-content: space-between;
+    padding: 7px 0; font-size: 12px; cursor: pointer;
+    color: var(--texto); border-bottom: 1px solid var(--borda);
+}
+
+.cat-row:last-child { border-bottom: none; }
+.cat-row:hover { color: var(--laranja); }
+.cat-row .count { color: var(--texto-3); font-size: 11px; }
+
+
+/* =========================================================
+   BOTÕES
+========================================================= */
+
+.btn {
+    display: inline-block; padding: 7px 14px;
+    border-radius: 3px; font-weight: bold; font-size: 12px;
+    letter-spacing: 0.3px; transition: 0.1s;
+    border: 1px solid transparent;
+}
+
+.btn-primary { background: var(--laranja); color: white; }
+.btn-primary:hover { background: var(--laranja-hover); text-decoration: none; }
+
+.btn-secondary { background: var(--azul); color: white; }
+.btn-secondary:hover { background: var(--azul-hover); text-decoration: none; }
+
+.btn-outline { background: white; color: var(--azul); border-color: var(--azul); }
+.btn-outline:hover { background: var(--azul); color: white; text-decoration: none; }
+
+.btn-block { display: block; width: 100%; text-align: center; }
+
+
+/* =========================================================
+   DETALHES
+========================================================= */
+
+.detail {
+    background: var(--card); border: 1px solid var(--borda);
+    border-radius: 4px; padding: 20px;
+}
+
+.back {
+    display: inline-block; padding: 6px 12px;
+    background: var(--fundo); border: 1px solid var(--borda);
+    border-radius: 3px; font-size: 12px; font-weight: bold;
+    color: var(--texto-2); margin-bottom: 16px; cursor: pointer;
+}
+
+.back:hover { color: var(--texto); border-color: var(--borda-forte); text-decoration: none; }
+
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 8px; }
+
+.detail-img {
+    height: 260px; background: var(--azul); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 40px; font-weight: bold; letter-spacing: 2px;
+}
+
+.detail-info h1 { font-size: 22px; color: var(--texto); margin-bottom: 8px; line-height: 1.25; }
+
+.detail-cat {
+    display: inline-block; background: var(--fundo);
+    border: 1px solid var(--borda); color: var(--texto-2);
+    padding: 3px 10px; border-radius: 3px;
+    font-size: 11px; font-weight: bold; margin-bottom: 12px;
+}
+
+.detail-desc { font-size: 13px; color: var(--texto-2); line-height: 1.6; margin-bottom: 16px; }
+.detail-price { font-size: 26px; font-weight: bold; color: var(--laranja); margin: 14px 0; }
+
+.seller {
+    background: var(--fundo); border: 1px solid var(--borda);
+    border-radius: 4px; padding: 12px; margin-bottom: 14px; font-size: 12px;
+}
+
+.seller strong { color: var(--azul); display: block; margin-bottom: 2px; font-size: 13px; }
+.seller small { color: var(--texto-2); }
+
+.detail-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.detail-actions .btn { width: 100%; }
+
+#detailFavBtn.active { background: var(--laranja); color: white; border-color: var(--laranja); }
+
+.seller-link { color: var(--azul); font-weight: bold; cursor: pointer; text-decoration: underline; }
+.seller-link:hover { color: var(--laranja); }
+
+.report-section { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--borda); }
+
+.report-section h2 {
+    font-size: 14px; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--azul); margin-bottom: 12px;
+}
+
+.report-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+.report-card {
+    background: var(--fundo); border: 1px solid var(--borda);
+    border-left: 3px solid var(--laranja); padding: 12px; border-radius: 3px;
+}
+
+.report-card h3 {
+    font-size: 12px; color: var(--azul); margin-bottom: 6px;
+    text-transform: uppercase; letter-spacing: 0.3px;
+}
+
+.report-card p { font-size: 12px; color: var(--texto-2); line-height: 1.5; }
+
+
+/* =========================================================
+   PERFIL
+========================================================= */
+
+.profile-header-box {
+    background: var(--card); border: 1px solid var(--borda);
+    border-radius: 4px; margin-bottom: 16px;
+}
+
+.profile-cover { height: 100px; background: var(--azul); border-radius: 4px 4px 0 0; }
+
+.profile-main {
+    padding: 0 20px 20px; display: flex; gap: 16px;
+    align-items: flex-end; margin-top: -30px;
+}
+
+.profile-avatar {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: var(--laranja); color: white;
+    border: 3px solid white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: bold; overflow: hidden; flex-shrink: 0;
+}
+
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.profile-info { flex: 1; padding-bottom: 6px; }
+.profile-info h2 { font-size: 20px; color: var(--texto); margin-bottom: 2px; }
+.profile-info .user { color: var(--laranja); font-weight: bold; font-size: 13px; margin-bottom: 2px; }
+.profile-info small { color: var(--texto-2); font-size: 12px; }
+
+.profile-stats { display: flex; gap: 0; padding: 14px 20px; border-top: 1px solid var(--borda); }
+
+.profile-stat { flex: 1; text-align: center; border-right: 1px solid var(--borda); }
+.profile-stat:last-child { border-right: none; }
+.profile-stat strong { display: block; font-size: 18px; color: var(--azul); margin-bottom: 2px; }
+.profile-stat span { font-size: 11px; color: var(--texto-2); text-transform: uppercase; letter-spacing: 0.3px; }
+
+#perfil .profile-stat:nth-child(3) strong { color: var(--laranja); }
+
+.info-list { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.info-row { padding: 10px 0; border-bottom: 1px solid var(--borda); font-size: 13px; }
+.info-row:nth-child(odd) { padding-right: 12px; }
+
+.info-row strong {
+    display: block; font-size: 11px; color: var(--texto-3);
+    text-transform: uppercase; letter-spacing: 0.3px;
+    margin-bottom: 3px; font-weight: bold;
+}
+
+.info-row.full { grid-column: 1 / -1; }
+
+#perfil .home-section + .home-section { margin-top: 18px; }
+
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+.modal {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: none; align-items: center; justify-content: center;
+    padding: 20px; z-index: 3000;
+}
+
+.modal.active { display: flex; }
+
+.modal-box {
+    background: white; border-radius: 4px;
+    width: 100%; max-width: 500px; max-height: 90vh;
+    overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+}
+
+.modal-head {
+    padding: 14px 20px; border-bottom: 1px solid var(--borda);
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--fundo);
+}
+
+.modal-head h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--azul); }
+
+.modal-close {
+    width: 28px; height: 28px; border-radius: 3px;
+    color: var(--texto-2); font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+}
+
+.modal-close:hover { background: var(--borda); color: var(--texto); }
+
+.modal-body { padding: 20px; }
+.field { margin-bottom: 14px; }
+.field label { display: block; margin-bottom: 5px; font-weight: bold; color: var(--texto); font-size: 12px; }
+
+.field input, .field select, .field textarea {
+    width: 100%; padding: 8px 10px;
+    border: 1px solid var(--borda-forte); border-radius: 3px;
+    outline: none; font-size: 13px; background: white; color: var(--texto);
+}
+
+.field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--laranja); box-shadow: 0 0 0 2px rgba(232,89,12,0.15);
+}
+
+.field textarea { min-height: 90px; resize: vertical; }
+
+.modal-foot {
+    padding: 14px 20px; border-top: 1px solid var(--borda);
+    display: flex; justify-content: flex-end; gap: 8px;
+    background: var(--fundo);
+}
+
+.upload {
+    background: var(--fundo); border: 1px dashed var(--borda-forte);
+    border-radius: 4px; padding: 16px; text-align: center; margin-bottom: 16px;
+}
+
+.upload-preview {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: var(--azul); color: white;
+    margin: 0 auto 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: bold; overflow: hidden;
+}
+
+.upload-preview img { width: 100%; height: 100%; object-fit: cover; }
+
+.upload-label {
+    display: inline-block; background: white;
+    border: 1px solid var(--borda-forte); color: var(--texto);
+    padding: 6px 14px; border-radius: 3px;
+    font-weight: bold; font-size: 12px; cursor: pointer;
+}
+
+.upload-label:hover { border-color: var(--azul); color: var(--azul); }
+
+#profilePhoto { display: none; }
+
+.remove-photo {
+    display: block; margin: 8px auto 0;
+    color: var(--vermelho); font-weight: bold; font-size: 11px;
+}
+
+
+/* =========================================================
+   EMPTY / PAGE
+========================================================= */
+
+.empty {
+    background: var(--card); border: 1px solid var(--borda);
+    border-radius: 4px; padding: 40px 20px; text-align: center;
+}
+
+.empty h2 { font-size: 14px; color: var(--texto); margin-bottom: 6px; }
+.empty p { font-size: 13px; color: var(--texto-2); }
+
+.page { display: none; }
+.page.active { display: block; }
+
+.page-title { font-size: 17px; color: var(--texto); margin-bottom: 14px; font-weight: bold; }
+
+
+/* =========================================================
+   HOME — MARKETPLACE
+========================================================= */
+
+.home-banner {
+    background: linear-gradient(135deg, var(--azul) 0%, #143a63 100%);
+    color: white; border-radius: 6px; padding: 28px 32px;
+    margin-bottom: 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 24px; overflow: hidden; position: relative;
+    border: 1px solid var(--azul-hover);
+}
+
+.home-banner::after {
+    content: ""; position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+        45deg, transparent, transparent 10px,
+        rgba(255,255,255,0.03) 10px, rgba(255,255,255,0.03) 20px
+    );
+    pointer-events: none;
+}
+
+.banner-content { position: relative; z-index: 2; max-width: 560px; }
+
+.banner-tag {
+    display: inline-block; background: var(--laranja); color: white;
+    font-size: 10px; font-weight: bold; letter-spacing: 1px;
+    padding: 3px 10px; border-radius: 3px; margin-bottom: 10px;
+}
+
+.banner-title { font-size: 26px; font-weight: bold; margin-bottom: 6px; line-height: 1.2; }
+.banner-desc { font-size: 13px; color: #c9d6e4; margin-bottom: 16px; line-height: 1.5; }
+
+.banner-icon {
+    font-size: 90px; font-weight: bold; color: var(--laranja); opacity: 0.15;
+    font-family: "Press Start 2P", monospace; flex-shrink: 0;
+    position: relative; z-index: 1;
+}
+
+.quick-cats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 22px; }
+
+.quick-cat {
+    background: var(--card); border: 1px solid var(--borda);
+    border-radius: 4px; padding: 14px 10px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    cursor: pointer; transition: 0.15s; text-align: center;
+}
+
+.quick-cat:hover {
+    border-color: var(--laranja); transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.quick-cat-icon {
+    width: 42px; height: 42px; background: var(--azul); color: white;
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: bold; letter-spacing: 0.5px;
+}
+
+.quick-cat span { font-size: 11px; font-weight: bold; color: var(--texto-2); line-height: 1.3; }
+
+.home-section { margin-bottom: 22px; }
+
+.home-section-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px;
+}
+
+.home-section-head h2 {
+    font-size: 15px; color: var(--azul); font-weight: bold;
+    text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+.home-more { font-size: 12px; font-weight: bold; color: var(--laranja); cursor: pointer; }
+.home-more:hover { color: var(--laranja-hover); text-decoration: underline; }
+
+.cards-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.product-card {
+    background: var(--card); border: 1px solid var(--borda);
+    border-radius: 4px; overflow: hidden; cursor: pointer;
+    transition: 0.15s; display: flex; flex-direction: column;
+}
+
+.product-card:hover {
+    border-color: var(--laranja); box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+}
+
+.product-card-img {
+    height: 110px; background: var(--azul); color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: bold; letter-spacing: 1px; flex-shrink: 0;
+}
+
+.product-card-body { padding: 10px 12px; flex: 1; }
+
+.product-card-cat {
+    display: inline-block; background: var(--fundo); color: var(--texto-3);
+    font-size: 10px; font-weight: bold; letter-spacing: 0.5px;
+    padding: 2px 6px; border-radius: 3px; margin-bottom: 6px;
+}
+
+.product-card-name {
+    font-size: 13px; font-weight: bold; color: var(--texto);
+    margin-bottom: 4px; line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+}
+
+.product-card-price { font-size: 15px; font-weight: bold; color: var(--laranja); margin-top: 6px; }
+
+.home-ranking {
+    background: var(--card); border: 1px solid var(--borda);
+    border-radius: 4px; padding: 4px 0;
+}
+
+.home-rank-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; border-bottom: 1px solid var(--borda);
+    cursor: pointer; font-size: 12px; transition: background 0.1s;
+}
+
+.home-rank-row:last-child { border-bottom: none; }
+.home-rank-row:hover { background: var(--fundo); }
+
+.home-rank-num { font-size: 14px; font-weight: bold; color: var(--texto-3); width: 18px; flex-shrink: 0; }
+
+.home-rank-icon {
+    width: 32px; height: 32px; background: var(--azul); color: white;
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: bold; flex-shrink: 0;
+}
+
+.home-rank-info { flex: 1; min-width: 0; }
+
+.home-rank-info strong {
+    display: block; font-size: 13px; color: var(--texto);
+    margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.home-rank-info small { font-size: 11px; color: var(--texto-3); }
+.home-rank-price { font-weight: bold; font-size: 13px; color: var(--laranja); flex-shrink: 0; }
+
+
+/* =========================================================
+   EXPLORAR
+========================================================= */
+
+.explore-head {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px; margin-bottom: 12px; flex-wrap: wrap;
+}
+
+.explore-sort { display: flex; align-items: center; gap: 8px; }
+
+.explore-sort label { font-size: 12px; color: var(--texto-2); font-weight: bold; }
+
+.explore-sort select {
+    padding: 6px 10px;
+    border: 1px solid var(--borda-forte);
+    border-radius: 3px;
+    background: var(--card);
+    color: var(--texto);
+    font-size: 12px;
+    cursor: pointer;
+    outline: none;
+}
+
+.explore-sort select:focus { border-color: var(--laranja); }
+
+.explore-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    background: var(--card);
+    border: 1px solid var(--borda);
+    border-radius: 4px;
+    padding: 3px;
+    margin-bottom: 12px;
+    width: fit-content;
+}
+
+.explore-result-info {
+    font-size: 12px;
+    color: var(--texto-3);
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+
+/* =========================================================
+   AVALIAÇÕES
+========================================================= */
+
+.reviews-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.review-stat {
+    background: var(--card);
+    border: 1px solid var(--borda);
+    border-radius: 4px;
+    padding: 14px;
+    text-align: center;
+}
+
+.review-stat strong {
+    display: block;
+    font-size: 22px;
+    font-weight: bold;
+    color: var(--azul);
+    margin-bottom: 4px;
+}
+
+.review-stat span {
+    font-size: 11px;
+    color: var(--texto-2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: bold;
+}
+
+.reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.review-card {
+    background: var(--card);
+    border: 1px solid var(--borda);
+    border-radius: 4px;
+    padding: 14px 16px;
+    display: flex;
+    gap: 14px;
+    transition: border-color 0.1s;
+}
+
+.review-card:hover { border-color: var(--borda-forte); }
+
+.review-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--azul);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: bold;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.review-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.review-body { flex: 1; min-width: 0; }
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+
+.review-author { font-size: 13px; font-weight: bold; color: var(--texto); }
+
+.review-author small {
+    display: block;
+    font-size: 11px;
+    font-weight: normal;
+    color: var(--texto-3);
+    margin-top: 2px;
+}
+
+.review-author small b { color: var(--laranja); font-weight: bold; }
+
+.review-stars {
+    font-size: 14px;
+    letter-spacing: 1px;
+    color: #f5b400;
+    flex-shrink: 0;
+}
+
+.review-stars .empty { color: var(--borda-forte); }
+
+.review-text {
+    font-size: 13px;
+    color: var(--texto-2);
+    line-height: 1.55;
+    margin-bottom: 10px;
+}
+
+.review-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.review-date { font-size: 11px; color: var(--texto-3); }
+.review-actions { display: flex; gap: 4px; }
+
+.review-helpful {
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: bold;
+    color: var(--texto-2);
+    transition: 0.1s;
+}
+
+.review-helpful:hover { background: var(--fundo); color: var(--texto); }
+.review-helpful.active { color: var(--laranja); }
+
+#detailReviewsList .review-card { padding: 12px 14px; }
+#detailReviewsList .review-avatar { width: 36px; height: 36px; font-size: 11px; }
+#detailReviewsList .review-actions { display: none; }
+
+
+/* =========================================================
+   FAVORITOS — ações no card
+========================================================= */
+
+.fav-card-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.fav-card-btn {
+    flex: 1;
+    padding: 5px 8px;
+    font-size: 11px;
+    border-radius: 3px;
+}
+
+.fav-card-remove { color: var(--vermelho); border-color: var(--vermelho); }
+.fav-card-remove:hover { background: var(--vermelho); color: white; }
+
+
+/* =========================================================
+   AVALIAR VENDEDOR — modal
+========================================================= */
+
+.star-picker {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.star {
+    font-size: 30px;
+    line-height: 1;
+    color: var(--borda-forte);
+    background: none;
+    border: none;
+    padding: 0 2px;
+    cursor: pointer;
+    transition: color 0.1s, transform 0.1s;
+}
+
+.star:hover { transform: scale(1.1); }
+.star.active { color: #f5b400; }
+
+#reviewComment { min-height: 100px; }
+
+
+/* =========================================================
+   RESPONSIVO
+========================================================= */
+
+@media (max-width: 1100px) {
+    .layout { grid-template-columns: 180px 1fr; }
+    .sidebar-right { display: none; }
+}
+
+@media (max-width: 800px) {
+    .layout { grid-template-columns: 1fr; padding: 0 10px; margin: 10px auto; }
+
+    .sidebar-left {
+        position: static;
+        display: flex;
+        overflow-x: auto;
+    }
+
+    .side-section { display: flex; padding: 0; border: none; }
+    .side-title { display: none; }
+
+    .nav-item {
+        padding: 10px 14px;
+        border-left: none;
+        border-bottom: 2px solid transparent;
+        white-space: nowrap;
+    }
+
+    .nav-item.active { border-left: none; border-bottom-color: var(--laranja); }
+
+    .side-section:last-child { display: none; }
+
+    .detail-grid { grid-template-columns: 1fr; }
+    .report-grid { grid-template-columns: 1fr; }
+    .info-list { grid-template-columns: 1fr; }
+    .info-row:nth-child(odd) { padding-right: 0; }
+
+    .home-banner { padding: 22px 20px; }
+    .banner-icon { display: none; }
+    .banner-title { font-size: 20px; }
+    .quick-cats { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 600px) {
+    .topbar { padding: 0 10px; gap: 8px; }
+
+    .topbar-actions .topbar-link {
+        display: inline-block;
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .topbar-user span { display: none; }
+
+    .topbar-search { max-width: none; }
+    .topbar-logo { font-size: 15px; }
+    .profile-main { flex-wrap: wrap; }
+    .profile-stats { padding: 12px; }
+    .profile-stat strong { font-size: 15px; }
+    .detail-img { height: 200px; font-size: 30px; }
+
+    .pixel-screen { min-height: 560px; padding: 25px 15px; }
+    .pixel-screen::before { inset: 8px; }
+
+    .reviews-stats { grid-template-columns: 1fr; }
+    .review-header { flex-direction: column; align-items: flex-start; }
+}
+
+@media (max-width: 500px) {
+    .quick-cats { grid-template-columns: repeat(2, 1fr); }
+    .cards-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+</style>
+
+</head>
+
+<body>
+
+
+<!-- =========================================================
+     TELA DE AUTENTICAÇÃO
+========================================================= -->
+
+<div id="authScreen">
+
+    <!-- INÍCIO -->
+    <div class="pixel-screen auth-page" id="authHome">
+
+        <div class="pixel-logo">BYTE<span>HUNT</span></div>
+
+        <div class="pixel-title">★ BEM-VINDO AO ★</div>
+
+        <div class="pixel-subtitle">
+            SUA AVENTURA PELO MUNDO DO HARDWARE COMEÇA AQUI
+        </div>
+
+        <div class="pixel-buttons">
+
+            <button class="pixel-btn" onclick="showAuthPage('login')">ENTRAR</button>
+            <button class="pixel-btn secondary" onclick="showAuthPage('signup')">CRIAR CONTA</button>
+            <button class="pixel-btn green" onclick="enterAsGuest()">EXPLORAR COMO VISITANTE</button>
+
+        </div>
+
+        <div class="pixel-footer">BYTEHUNT © 2026 &nbsp; | &nbsp; V1.0</div>
+
+    </div>
+
+
+    <!-- LOGIN -->
+    <div class="pixel-screen auth-page auth-hidden" id="authLogin">
+
+        <div class="pixel-logo">BYTE<span>HUNT</span></div>
+
+        <form class="auth-form" onsubmit="loginLocal(event)">
+
+            <h2>ENTRAR NA CONTA</h2>
+
+            <div id="loginMessage" class="auth-message"></div>
+
+            <div class="auth-field">
+                <label>E-MAIL</label>
+                <input type="email" id="loginEmail" placeholder="seu@email.com" required autocomplete="email">
+            </div>
+
+            <div class="auth-field">
+                <label>SENHA</label>
+                <div class="password-box">
+                    <input type="password" id="loginPassword" placeholder="Digite sua senha" required autocomplete="current-password">
+                    <button type="button" class="password-toggle" onclick="togglePassword('loginPassword', this)" title="Mostrar senha">👁</button>
+                </div>
+            </div>
+
+            <button type="submit" class="pixel-btn">ENTRAR</button>
+
+            <button type="button" class="auth-back" onclick="showAuthPage('home')">← VOLTAR</button>
+
+        </form>
+
+        <div class="pixel-footer">BYTEHUNT © 2026</div>
+
+    </div>
+
+
+    <!-- CADASTRO -->
+    <div class="pixel-screen auth-page auth-hidden" id="authSignup">
+
+        <div class="pixel-logo">BYTE<span>HUNT</span></div>
+
+        <form class="auth-form" onsubmit="signupLocal(event)">
+
+            <h2>CRIAR CONTA</h2>
+
+            <div id="signupMessage" class="auth-message"></div>
+
+            <div class="auth-field">
+                <label>NOME</label>
+                <input type="text" id="signupName" placeholder="Seu nome" required autocomplete="name">
+            </div>
+
+            <div class="auth-field">
+                <label>E-MAIL</label>
+                <input type="email" id="signupEmail" placeholder="seu@email.com" required autocomplete="email">
+            </div>
+
+            <div class="auth-field">
+                <label>SENHA</label>
+                <div class="password-box">
+                    <input type="password" id="signupPassword" placeholder="Crie uma senha" minlength="6" required autocomplete="new-password">
+                    <button type="button" class="password-toggle" onclick="togglePassword('signupPassword', this)" title="Mostrar senha">👁</button>
+                </div>
+            </div>
+
+            <div class="auth-field">
+                <label>CONFIRMAR SENHA</label>
+                <div class="password-box">
+                    <input type="password" id="signupPasswordConfirm" placeholder="Digite a senha novamente" minlength="6" required autocomplete="new-password">
+                    <button type="button" class="password-toggle" onclick="togglePassword('signupPasswordConfirm', this)" title="Mostrar senha">👁</button>
+                </div>
+            </div>
+
+            <button type="submit" class="pixel-btn">CRIAR CONTA</button>
+
+            <button type="button" class="auth-back" onclick="showAuthPage('home')">← VOLTAR</button>
+
+        </form>
+
+        <div class="pixel-footer">BYTEHUNT © 2026</div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     APLICAÇÃO PRINCIPAL
+========================================================= -->
+
+<div id="app" class="app-hidden">
+
+
+<header class="topbar">
+
+    <div class="topbar-logo">Byte<span>Hunt</span></div>
+
+    <form class="topbar-search" onsubmit="event.preventDefault(); searchProducts();">
+        <input type="text" id="searchInput" placeholder="Buscar peças, categorias...">
+        <button type="submit">Buscar</button>
+    </form>
+
+    <div class="topbar-actions">
+
+        <a class="topbar-link primary" onclick="openModal()">+ Anunciar</a>
+
+        <div class="topbar-user" onclick="showPage('perfil')">
+            <div class="topbar-avatar" id="topbarAvatar">AH</div>
+            <span id="topbarName">Arthur</span>
+        </div>
+
+        <button class="logout-button" onclick="logout()">SAIR</button>
+
+    </div>
+
+</header>
+
+
+<div class="layout">
+
+
+<aside class="sidebar-left">
+
+    <div class="side-section">
+
+        <div class="side-title">Navegação</div>
+
+        <a class="nav-item active" onclick="showPage('home', this)">Início</a>
+        <a class="nav-item" onclick="showPage('explorar', this)">Explorar peças</a>
+        <a class="nav-item" onclick="showPage('favoritos', this)">Favoritos</a>
+        <a class="nav-item" onclick="showPage('avaliacoes', this)">Avaliações</a>
+        <a class="nav-item" onclick="showPage('perfil', this)">Meu perfil</a>
+
+    </div>
+
+
+    <div class="side-section">
+
+        <div class="side-title">Categorias</div>
+
+        <a class="nav-item" onclick="filterCategory('GPU')">Placas de vídeo <span class="count">42</span></a>
+        <a class="nav-item" onclick="filterCategory('CPU')">Processadores <span class="count">28</span></a>
+        <a class="nav-item" onclick="filterCategory('RAM')">Memórias <span class="count">35</span></a>
+        <a class="nav-item" onclick="filterCategory('MB')">Placas-mãe <span class="count">19</span></a>
+        <a class="nav-item" onclick="filterCategory('PSU')">Fontes <span class="count">23</span></a>
+
+    </div>
+
+
+    <div class="side-section">
+        <div class="box-body">
+            <button class="btn btn-primary btn-block" onclick="openModal()">Anunciar peça</button>
+        </div>
+    </div>
+
+</aside>
+
+
+<main>
+
+
+<!-- HOME -->
+<section id="home" class="page active">
+
+    <div class="home-banner">
+        <div class="banner-content">
+            <span class="banner-tag">DESTAQUE DA SEMANA</span>
+            <h1 class="banner-title">RTX 3060 12GB</h1>
+            <p class="banner-desc">Garimpada por R$ 1.450 — em ótimo estado e testada.</p>
+            <button class="btn btn-primary" onclick="openProduct('RTX 3060 12GB', 1450, 'GPU', 'Placa de vídeo usada em bom estado.', 'GPU')">Ver peça</button>
+        </div>
+        <div class="banner-icon">GPU</div>
+    </div>
+
+
+    <div class="quick-cats">
+
+        <div class="quick-cat" onclick="filterCategory('GPU')">
+            <div class="quick-cat-icon">GPU</div>
+            <span>Placas de vídeo</span>
+        </div>
+
+        <div class="quick-cat" onclick="filterCategory('CPU')">
+            <div class="quick-cat-icon">CPU</div>
+            <span>Processadores</span>
+        </div>
+
+        <div class="quick-cat" onclick="filterCategory('RAM')">
+            <div class="quick-cat-icon">RAM</div>
+            <span>Memórias</span>
+        </div>
+
+        <div class="quick-cat" onclick="filterCategory('MB')">
+            <div class="quick-cat-icon">MB</div>
+            <span>Placas-mãe</span>
+        </div>
+
+        <div class="quick-cat" onclick="filterCategory('PSU')">
+            <div class="quick-cat-icon">PSU</div>
+            <span>Fontes</span>
+        </div>
+
+    </div>
+
+
+    <div class="home-section">
+        <div class="home-section-head">
+            <h2>Peças recentes</h2>
+            <a class="home-more" onclick="showPage('explorar')">Ver todas →</a>
+        </div>
+        <div id="homeProducts" class="cards-grid"></div>
+    </div>
+
+</section>
+
+
+<!-- EXPLORAR -->
+<section id="explorar" class="page">
+
+    <div class="explore-head">
+        <div class="page-title" style="margin:0;">Explorar peças</div>
+        <div class="explore-sort">
+            <label for="sortSelect">Ordenar por:</label>
+            <select id="sortSelect" onchange="applyExploreSort(this.value)">
+                <option value="recent">Mais recentes</option>
+                <option value="price-asc">Menor preço</option>
+                <option value="price-desc">Maior preço</option>
+                <option value="votes">Mais votados</option>
+            </select>
+        </div>
+    </div>
+
+
+    <div class="explore-filters">
+        <div class="tab active" onclick="applyFilter('TODOS', this)">Todas</div>
+        <div class="tab" onclick="applyFilter('GPU', this)">Placas de vídeo</div>
+        <div class="tab" onclick="applyFilter('CPU', this)">Processadores</div>
+        <div class="tab" onclick="applyFilter('RAM', this)">Memórias</div>
+        <div class="tab" onclick="applyFilter('MB', this)">Placas-mãe</div>
+        <div class="tab" onclick="applyFilter('PSU', this)">Fontes</div>
+    </div>
+
+
+    <div class="explore-result-info">
+        <span id="exploreCount">0 peças encontradas</span>
+    </div>
+
+    <div id="allProducts" class="cards-grid"></div>
+
+</section>
+
+
+<!-- DETALHES -->
+<section id="detalhes" class="page">
+
+    <a class="back" onclick="showPage('explorar')">← Voltar</a>
+
+    <div class="detail">
+
+        <div class="detail-grid">
+
+            <div class="detail-img" id="detailIcon">GPU</div>
+
+            <div class="detail-info">
+
+                <span class="detail-cat" id="detailCategory">GPU</span>
+
+                <h1 id="detailName">RTX 3060 12GB</h1>
+
+                <div class="detail-price" id="detailPrice">R$ 1.450,00</div>
+
+                <p class="detail-desc" id="detailDescription">
+                    Peça usada anunciada por um membro da comunidade ByteHunt.
+                </p>
+
+                <div class="seller">
+                    <strong>
+                        Vendedor:
+                        <a id="detailSellerName" class="seller-link" onclick="openVendorPage(this.textContent.trim())">JoãoPC</a>
+                    </strong>
+                    <small id="detailSellerInfo">Avaliação — (0 avaliações)</small>
+                </div>
+
+                <div class="detail-actions">
+
+                    <button class="btn btn-primary btn-block" onclick="contatarVendedor()">
+                        Tenho interesse
+                    </button>
+
+                    <button class="btn btn-secondary btn-block" onclick="openReviewModalFromDetail()">
+                        Avaliar vendedor
+                    </button>
+
+                    <button class="btn btn-outline btn-block" id="detailFavBtn" onclick="toggleFavoriteFromDetail(this)">
+                        Favoritar
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="report-section">
+
+            <h2>Relatório de funcionamento</h2>
+
+            <div class="report-grid">
+
+                <div class="report-card">
+                    <h3>Temperatura</h3>
+                    <p>Funcionando normalmente. Temperatura dentro do esperado durante os testes.</p>
+                </div>
+
+                <div class="report-card">
+                    <h3>Desempenho</h3>
+                    <p>Peça testada em jogos e programas de estresse.</p>
+                </div>
+
+                <div class="report-card">
+                    <h3>Estado físico</h3>
+                    <p>Pequenas marcas de uso, sem danos estruturais.</p>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="report-section">
+
+            <h2 id="detailReviewsTitle">Avaliações do vendedor</h2>
+
+            <div id="detailReviewsList" class="reviews-list"></div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- AVALIAÇÕES -->
+<section id="avaliacoes" class="page">
+
+    <div class="explore-head">
+        <div class="page-title" style="margin:0;">Avaliações de vendedores</div>
+        <div class="explore-sort">
+            <label for="reviewSort">Ordenar por:</label>
+            <select id="reviewSort" onchange="applyReviewSort(this.value)">
+                <option value="recent">Mais recentes</option>
+                <option value="best">Melhor nota</option>
+                <option value="worst">Pior nota</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="reviews-stats" id="reviewsStats">
+        <div class="review-stat">
+            <strong id="avgRating">0.0</strong>
+            <span>Nota média</span>
+        </div>
+        <div class="review-stat">
+            <strong id="totalReviews">0</strong>
+            <span>Total de avaliações</span>
+        </div>
+        <div class="review-stat">
+            <strong id="fiveStars">0%</strong>
+            <span>5 estrelas</span>
+        </div>
+    </div>
+
+    <div id="reviewsList" class="reviews-list"></div>
+
+</section>
+
+
+<!-- FAVORITOS -->
+<section id="favoritos" class="page">
+
+    <div class="explore-head">
+        <div class="page-title" style="margin:0;">Meus favoritos</div>
+        <span id="favoritesCount" style="font-size:12px; color:var(--texto-3); font-weight:bold;">0 itens</span>
+    </div>
+
+    <div id="favoriteList" class="cards-grid"></div>
+
+</section>
+
+
+<!-- PERFIL -->
+<section id="perfil" class="page">
+
+    <div class="profile-header-box">
+
+        <div class="profile-cover"></div>
+
+        <div class="profile-main">
+
+            <div class="profile-avatar" id="profileAvatar">AH</div>
+
+            <div class="profile-info">
+                <h2 id="profileNameDisplay">Arthur Hugo</h2>
+                <div class="user" id="profileUsernameDisplay">@arthurhugo</div>
+                <small>
+                    Membro desde <span id="profileMemberSince">2026</span>
+                </small>
+            </div>
+
+            <button class="btn btn-outline" onclick="openProfileModal()">Editar perfil</button>
+
+        </div>
+
+        <div class="profile-stats">
+            <div class="profile-stat">
+                <strong id="statAds">0</strong>
+                <span>Anúncios</span>
+            </div>
+            <div class="profile-stat">
+                <strong id="statFavorites">0</strong>
+                <span>Favoritos</span>
+            </div>
+            <div class="profile-stat">
+                <strong id="statRating">—</strong>
+                <span>Avaliação</span>
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="box">
+
+        <div class="box-head">Informações do perfil</div>
+
+        <div class="box-body">
+
+            <div class="info-list">
+
+                <div class="info-row">
+                    <strong>Nome</strong>
+                    <span id="profileNameInfo">Arthur Hugo</span>
+                </div>
+
+                <div class="info-row">
+                    <strong>Usuário</strong>
+                    <span id="profileUsernameInfo">@arthurhugo</span>
+                </div>
+
+                <div class="info-row">
+                    <strong>E-mail</strong>
+                    <span id="profileEmailDisplay">Não informado</span>
+                </div>
+
+                <div class="info-row">
+                    <strong>Localização</strong>
+                    <span id="profileLocationDisplay">Não informado</span>
+                </div>
+
+                <div class="info-row full">
+                    <strong>Sobre mim</strong>
+                    <span id="profileBioDisplay">Entusiasta de hardware e tecnologia.</span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="home-section" style="margin-top:18px;">
+
+        <div class="home-section-head">
+            <h2>Meus anúncios</h2>
+            <a class="home-more" onclick="openModal()">+ Anunciar peça</a>
+        </div>
+
+        <div id="profileMyAds" class="cards-grid"></div>
+
+    </div>
+
+
+    <div class="home-section">
+
+        <div class="home-section-head">
+            <h2>Avaliações recebidas</h2>
+        </div>
+
+        <div id="profileReviews" class="reviews-list"></div>
+
+    </div>
+
+</section>
+
+
+<!-- VENDEDOR PÚBLICO -->
+<section id="vendedor" class="page">
+
+    <a class="back" onclick="showPage('explorar')">← Voltar</a>
+
+    <div class="profile-header-box">
+
+        <div class="profile-cover"></div>
+
+        <div class="profile-main">
+
+            <div class="profile-avatar" id="vendorAvatar">?</div>
+
+            <div class="profile-info">
+                <h2 id="vendorNameDisplay">—</h2>
+                <div class="user" id="vendorUsernameDisplay">@—</div>
+                <small>
+                    Avaliação <b id="vendorAvg">—</b>
+                    &nbsp;·&nbsp;
+                    <span id="vendorReviewCount">0 avaliações</span>
+                </small>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="home-section" style="margin-top:18px;">
+        <div class="home-section-head">
+            <h2>Anúncios ativos</h2>
+        </div>
+        <div id="vendorAds" class="cards-grid"></div>
+    </div>
+
+    <div class="home-section">
+        <div class="home-section-head">
+            <h2>Avaliações recebidas</h2>
+        </div>
+        <div id="vendorReviews" class="reviews-list"></div>
+    </div>
+
+</section>
+
+</main>
+
+
+<!-- SIDEBAR DIREITA -->
+<aside class="sidebar-right">
+
+    <div class="box">
+        <div class="box-head">Comunidade ByteHunt</div>
+        <div class="box-body">
+            <div class="stat-row"><span>Membros</span><span>1.248</span></div>
+            <div class="stat-row"><span>Anúncios ativos</span><span>147</span></div>
+            <div class="stat-row"><span>Online agora</span><span>342</span></div>
+            <div style="margin-top:12px;">
+                <button class="btn btn-primary btn-block" onclick="openModal()">Criar anúncio</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="box">
+        <div class="box-head">Mais procurados</div>
+        <div class="box-body">
+            <div class="rank-item" onclick="filterCategory('GPU')">
+                <span class="rank-num">1</span>
+                <div class="rank-info">
+                    <strong>RTX 3060 12GB</strong>
+                    <small>128 visualizações hoje</small>
+                </div>
+            </div>
+            <div class="rank-item" onclick="filterCategory('CPU')">
+                <span class="rank-num">2</span>
+                <div class="rank-info">
+                    <strong>Ryzen 5 5600</strong>
+                    <small>97 visualizações hoje</small>
+                </div>
+            </div>
+            <div class="rank-item" onclick="filterCategory('RAM')">
+                <span class="rank-num">3</span>
+                <div class="rank-info">
+                    <strong>DDR4 3200MHz 16GB</strong>
+                    <small>76 visualizações hoje</small>
+                </div>
+            </div>
+            <div class="rank-item" onclick="filterCategory('PSU')">
+                <span class="rank-num">4</span>
+                <div class="rank-info">
+                    <strong>Fonte 650W 80 Plus</strong>
+                    <small>54 visualizações hoje</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="box">
+        <div class="box-head">Categorias</div>
+        <div class="box-body">
+            <div class="cat-row" onclick="filterCategory('GPU')">
+                <span>Placas de vídeo</span><span class="count">42</span>
+            </div>
+            <div class="cat-row" onclick="filterCategory('CPU')">
+                <span>Processadores</span><span class="count">28</span>
+            </div>
+            <div class="cat-row" onclick="filterCategory('RAM')">
+                <span>Memórias</span><span class="count">35</span>
+            </div>
+            <div class="cat-row" onclick="filterCategory('MB')">
+                <span>Placas-mãe</span><span class="count">19</span>
+            </div>
+            <div class="cat-row" onclick="filterCategory('PSU')">
+                <span>Fontes</span><span class="count">23</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="box">
+        <div class="box-body" style="font-size:11px; color:var(--texto-3); line-height:1.6;">
+            ByteHunt 2026<br>
+            Garimpando tecnologia, encontrando oportunidades.
+        </div>
+    </div>
+
+</aside>
+
+</div>
+
+
+<!-- =========================================================
+     MODAL ANÚNCIO
+========================================================= -->
+
+<div class="modal" id="productModal">
+
+    <div class="modal-box">
+
+        <div class="modal-head">
+            <h2>Anunciar peça</h2>
+            <button class="modal-close" onclick="closeModal()">×</button>
+        </div>
+
+        <div class="modal-body">
+
+            <div class="field">
+                <label>Nome da peça</label>
+                <input type="text" id="newName" placeholder="Ex: RTX 3060 12GB">
+            </div>
+
+            <div class="field">
+                <label>Categoria</label>
+                <select id="newCategory">
+                    <option value="GPU">Placa de vídeo</option>
+                    <option value="CPU">Processador</option>
+                    <option value="RAM">Memória RAM</option>
+                    <option value="MB">Placa-mãe</option>
+                    <option value="PSU">Fonte</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Preço (R$)</label>
+                <input type="number" id="newPrice" placeholder="1450">
+            </div>
+
+            <div class="field">
+                <label>Descrição</label>
+                <textarea id="newDescription" placeholder="Descreva o estado da peça..."></textarea>
+            </div>
+
+        </div>
+
+        <div class="modal-foot">
+            <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+            <button class="btn btn-primary" onclick="publishProduct()">Publicar</button>
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     MODAL PERFIL
+========================================================= -->
+
+<div class="modal" id="profileModal">
+
+    <div class="modal-box">
+
+        <div class="modal-head">
+            <h2>Editar perfil</h2>
+            <button class="modal-close" onclick="closeProfileModal()">×</button>
+        </div>
+
+        <div class="modal-body">
+
+            <div class="upload">
+
+                <div class="upload-preview" id="photoPreview">AH</div>
+
+                <label for="profilePhoto" class="upload-label">Escolher foto</label>
+
+                <input type="file" id="profilePhoto" accept="image/*" onchange="previewProfilePhoto(event)">
+
+                <button class="remove-photo" onclick="removeProfilePhoto()">Remover foto</button>
+
+                <p style="margin-top:8px; color:var(--texto-3); font-size:11px;">
+                    Escolha uma imagem do seu computador.
+                </p>
+
+            </div>
+
+            <div class="field">
+                <label>Nome</label>
+                <input type="text" id="profileName" placeholder="Digite seu nome">
+            </div>
+
+            <div class="field">
+                <label>Nome de usuário</label>
+                <input type="text" id="profileUsername" placeholder="Ex: arthurhugo">
+            </div>
+
+            <div class="field">
+                <label>E-mail</label>
+                <input type="email" id="profileEmail" placeholder="seuemail@email.com">
+            </div>
+
+            <div class="field">
+                <label>Localização</label>
+                <input type="text" id="profileLocation" placeholder="Ex: Belo Horizonte - MG">
+            </div>
+
+            <div class="field">
+                <label>Sobre mim</label>
+                <textarea id="profileBio" placeholder="Conte um pouco sobre você..."></textarea>
+            </div>
+
+        </div>
+
+        <div class="modal-foot">
+            <button class="btn btn-outline" onclick="closeProfileModal()">Cancelar</button>
+            <button class="btn btn-primary" onclick="saveProfile()">Salvar</button>
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     MODAL AVALIAR VENDEDOR
+========================================================= -->
+
+<div class="modal" id="reviewModal">
+
+    <div class="modal-box">
+
+        <div class="modal-head">
+            <h2>Avaliar vendedor</h2>
+            <button class="modal-close" onclick="closeReviewModal()">×</button>
+        </div>
+
+        <div class="modal-body">
+
+            <p id="reviewModalSeller" style="font-size:13px; color:var(--texto-2); margin-bottom:16px;">
+                Vendedor: <b>—</b>
+            </p>
+
+            <div class="field">
+                <label>Nota</label>
+                <div class="star-picker" id="starPicker">
+                    <button type="button" class="star" data-value="1" onclick="setStarRating(1)">★</button>
+                    <button type="button" class="star" data-value="2" onclick="setStarRating(2)">★</button>
+                    <button type="button" class="star" data-value="3" onclick="setStarRating(3)">★</button>
+                    <button type="button" class="star" data-value="4" onclick="setStarRating(4)">★</button>
+                    <button type="button" class="star" data-value="5" onclick="setStarRating(5)">★</button>
+                </div>
+                <small id="starHint" style="display:block; margin-top:6px; color:var(--texto-3); font-size:11px;">
+                    Clique em uma estrela para dar a nota.
+                </small>
+            </div>
+
+            <div class="field">
+                <label>Comentário</label>
+                <textarea id="reviewComment" placeholder="Conte como foi a compra..." maxlength="500"></textarea>
+            </div>
+
+        </div>
+
+        <div class="modal-foot">
+            <button class="btn btn-outline" onclick="closeReviewModal()">Cancelar</button>
+            <button class="btn btn-primary" onclick="submitReview()">Enviar avaliação</button>
+        </div>
+
+    </div>
+
+</div>
+
+
+</div>
+
+
+<!-- =========================================================
+     JAVASCRIPT
+========================================================= -->
+
+<script>
+/* =========================================================
+   CONFIGURAÇÃO
+========================================================= */
+
+const CATEGORY_LABEL = {
+    GPU: "GPU",
+    CPU: "CPU",
+    RAM: "RAM",
+    MB: "MB",
+    PSU: "PSU"
+};
+
+
+/* =========================================================
+   DADOS — PRODUTOS
+========================================================= */
+
+let products = [
+
+    {
+        name: "RTX 3060 12GB",
+        price: 1450,
+        category: "GPU",
+        icon: "GPU",
+        description: "Placa de vídeo usada em bom estado.",
+        votes: 128,
+        owner: "arthurhugo"
+    },
+
+    {
+        name: "Ryzen 5 5600",
+        price: 650,
+        category: "CPU",
+        icon: "CPU",
+        description: "Processador AMD usado e funcionando.",
+        votes: 97,
+        owner: "joaopc"
+    },
+
+    {
+        name: "16GB DDR4 3200MHz",
+        price: 220,
+        category: "RAM",
+        icon: "RAM",
+        description: "Memória RAM DDR4 funcionando normalmente.",
+        votes: 76,
+        owner: "arthurhugo"
+    },
+
+    {
+        name: "B550M Gaming",
+        price: 480,
+        category: "MB",
+        icon: "MB",
+        description: "Placa-mãe AM4 em ótimo estado.",
+        votes: 54,
+        owner: "joaopc"
+    },
+
+    {
+        name: "RX 6600 8GB",
+        price: 1250,
+        category: "GPU",
+        icon: "GPU",
+        description: "Placa de vídeo usada.",
+        votes: 89,
+        owner: "marinatech"
+    },
+
+    {
+        name: "Core i5 10400F",
+        price: 500,
+        category: "CPU",
+        icon: "CPU",
+        description: "Processador Intel usado.",
+        votes: 62,
+        owner: "joaopc"
+    },
+
+    {
+        name: "Fonte 650W 80 Plus",
+        price: 280,
+        category: "PSU",
+        icon: "PSU",
+        description: "Fonte de alimentação usada.",
+        votes: 41,
+        owner: "marinatech"
+    }
+
+];
+
+
+/* =========================================================
+   DADOS — AVALIAÇÕES (MOCK)
+========================================================= */
+
+let reviews = [
+
+    {
+        id: 1,
+        buyerName: "MarinaTech",
+        sellerName: "JoãoPC",
+        rating: 5,
+        text: "Comprei uma RTX 3060 com o João. Peça chegou embalada com cuidado, funcionando perfeitamente. Recomendo!",
+        date: "2026-10-15",
+        helpful: 12,
+        userHelpful: false
+    },
+
+    {
+        id: 2,
+        buyerName: "CarlosGamer",
+        sellerName: "JoãoPC",
+        rating: 4,
+        text: "Boa comunicação e envio rápido. A placa tinha pequenas marcas de uso, mas o João já tinha avisado no anúncio.",
+        date: "2026-10-08",
+        helpful: 5,
+        userHelpful: false
+    },
+
+    {
+        id: 3,
+        buyerName: "PedroSilva",
+        sellerName: "MarinaTech",
+        rating: 5,
+        text: "Comprei um Ryzen 5 5600. Testei por uma semana e está 100%. Vendedora muito atenciosa.",
+        date: "2026-10-02",
+        helpful: 18,
+        userHelpful: false
+    },
+
+    {
+        id: 4,
+        buyerName: "LucasHardware",
+        sellerName: "TechShopBH",
+        rating: 3,
+        text: "A peça funciona, mas demorou 10 dias para chegar. Poderia ter avisado antes sobre o prazo.",
+        date: "2026-09-28",
+        helpful: 3,
+        userHelpful: false
+    },
+
+    {
+        id: 5,
+        buyerName: "AnaCpu",
+        sellerName: "MarinaTech",
+        rating: 5,
+        text: "Já comprei duas vezes com a Marina. Sempre peças boas e preço justo. Confiança total.",
+        date: "2026-09-20",
+        helpful: 9,
+        userHelpful: false
+    },
+
+    {
+        id: 6,
+        buyerName: "RobertoPC",
+        sellerName: "JoãoPC",
+        rating: 2,
+        text: "A fonte chegou com a caixa amassada e um cabo com defeito. O João resolveu, mas deu trabalho.",
+        date: "2026-09-12",
+        helpful: 7,
+        userHelpful: false
+    }
+
+];
+
+
+/* =========================================================
+   ESTADO GLOBAL
+========================================================= */
+
+let favorites = [];
+
+let profile = {
+    name: "Arthur Hugo",
+    username: "arthurhugo",
+    email: "",
+    location: "",
+    bio: "Entusiasta de hardware e tecnologia. Gosto de montar computadores e encontrar boas oportunidades em peças usadas.",
+    photo: "",
+    memberSince: "2026"
+};
+
+let currentDetailProduct = null;
+let currentReviewSort = "recent";
+let reviewModalState = { sellerName: "", rating: 0 };
+let reviewedSellersThisSession = [];
+let editingProductName = null;
+
+let exploreState = {
+    category: "TODOS",
+    sort: "recent"
+};
+
+let savedAccounts = [];   // contas criadas neste navegador
+
+
+/* =========================================================
+   AUTENTICAÇÃO LOCAL
+========================================================= */
+
+function showAuthPage(page) {
+
+    document
+        .querySelectorAll(".auth-page")
+        .forEach(function(el) {
+            el.classList.add("auth-hidden");
+        });
+
+    if (page === "home") {
+        document.getElementById("authHome").classList.remove("auth-hidden");
+    }
+
+    if (page === "login") {
+        document.getElementById("authLogin").classList.remove("auth-hidden");
+        clearAuthMessage("loginMessage");
+    }
+
+    if (page === "signup") {
+        document.getElementById("authSignup").classList.remove("auth-hidden");
+        clearAuthMessage("signupMessage");
+    }
+}
+
+
+function showAuthMessage(id, message, type) {
+
+    const box = document.getElementById(id);
+    if (!box) return;
+    box.textContent = message;
+    box.className = "auth-message show " + type;
+}
+
+
+function clearAuthMessage(id) {
+
+    const box = document.getElementById(id);
+    if (!box) return;
+    box.textContent = "";
+    box.className = "auth-message";
+}
+
+
+function togglePassword(inputId, button) {
+
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+    if (input.type === "password") {
+        input.type = "text";
+        button.textContent = "🙈";
+        button.title = "Ocultar senha";
+    } else {
+        input.type = "password";
+        button.textContent = "👁";
+        button.title = "Mostrar senha";
+    }
+}
+
+
+function gerarUsername(name) {
+
+    return name
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, "")
+        .substring(0, 20) || "usuario";
+}
+
+
+function carregarContas() {
+
+    const saved = localStorage.getItem("bytehuntAccounts");
+
+    if (saved) {
+        try { savedAccounts = JSON.parse(saved); } catch (e) { savedAccounts = []; }
+    }
+}
+
+
+function salvarContas() {
+
+    localStorage.setItem("bytehuntAccounts", JSON.stringify(savedAccounts));
+}
+
+
+function loginLocal(event) {
+
+    event.preventDefault();
+    clearAuthMessage("loginMessage");
+
+    const email = document.getElementById("loginEmail").value.trim().toLowerCase();
+    const password = document.getElementById("loginPassword").value;
+
+    if (!email || !password) {
+        showAuthMessage("loginMessage", "Preencha o e-mail e a senha.", "error");
+        return;
+    }
+
+    if (password.length < 6) {
+        showAuthMessage("loginMessage", "A senha precisa ter pelo menos 6 caracteres.", "error");
+        return;
+    }
+
+    const conta = savedAccounts.find(function(c) {
+        return c.email === email;
+    });
+
+    if (!conta) {
+        // Cria a conta automaticamente (modo demonstração)
+        const nomeDoEmail = email.split("@")[0];
+        const novaConta = {
+            name: nomeDoEmail,
+            username: gerarUsername(nomeDoEmail),
+            email: email,
+            password: password,
+            location: "",
+            bio: "Entusiasta de hardware.",
+            photo: "",
+            memberSince: new Date().getFullYear().toString()
+        };
+        savedAccounts.push(novaConta);
+        salvarContas();
+        enterApplication(novaConta);
+        return;
+    }
+
+    if (conta.password !== password) {
+        showAuthMessage("loginMessage", "Senha incorreta.", "error");
+        return;
+    }
+
+    enterApplication(conta);
+}
+
+
+function signupLocal(event) {
+
+    event.preventDefault();
+    clearAuthMessage("signupMessage");
+
+    const name = document.getElementById("signupName").value.trim();
+    const email = document.getElementById("signupEmail").value.trim().toLowerCase();
+    const password = document.getElementById("signupPassword").value;
+    const confirm = document.getElementById("signupPasswordConfirm").value;
+
+    if (!name || !email || !password || !confirm) {
+        showAuthMessage("signupMessage", "Preencha todos os campos.", "error");
+        return;
+    }
+
+    if (password.length < 6) {
+        showAuthMessage("signupMessage", "A senha precisa ter pelo menos 6 caracteres.", "error");
+        return;
+    }
+
+    if (password !== confirm) {
+        showAuthMessage("signupMessage", "As senhas não são iguais.", "error");
+        return;
+    }
+
+    if (savedAccounts.some(function(c) { return c.email === email; })) {
+        showAuthMessage("signupMessage", "Este e-mail já possui uma conta.", "error");
+        return;
+    }
+
+    const novaConta = {
+        name: name,
+        username: gerarUsername(name),
+        email: email,
+        password: password,
+        location: "",
+        bio: "Entusiasta de hardware.",
+        photo: "",
+        memberSince: new Date().getFullYear().toString()
+    };
+
+    savedAccounts.push(novaConta);
+    salvarContas();
+
+    enterApplication(novaConta);
+}
+
+
+function enterAsGuest() {
+
+    localStorage.setItem("bytehuntGuest", "true");
+
+    profile.name = "Visitante";
+    profile.username = "visitante";
+    profile.email = "";
+
+    updateProfileInterface();
+    showApplication();
+}
+
+
+function enterApplication(conta) {
+
+    localStorage.removeItem("bytehuntGuest");
+    localStorage.setItem("bytehuntCurrentUser", conta.email);
+
+    profile.name = conta.name;
+    profile.username = conta.username;
+    profile.email = conta.email;
+    profile.location = conta.location || "";
+    profile.bio = conta.bio || "";
+    profile.photo = conta.photo || "";
+    profile.memberSince = conta.memberSince || "2026";
+
+    updateProfileInterface();
+    showApplication();
+}
+
+
+function showApplication() {
+
+    document.getElementById("authScreen").classList.add("auth-hidden");
+    document.getElementById("app").classList.remove("app-hidden");
+
+    loadProfile();
+    loadFavorites();
+    renderHomeProducts();
+    renderAllProducts();
+    renderReviews();
+    renderProfile();
+}
+
+
+function showAuthScreen() {
+
+    document.getElementById("app").classList.add("app-hidden");
+    document.getElementById("authScreen").classList.remove("auth-hidden");
+    showAuthPage("home");
+}
+
+
+function logout() {
+
+    localStorage.removeItem("bytehuntGuest");
+    localStorage.removeItem("bytehuntCurrentUser");
+    showAuthScreen();
+}
+
+
+function checkAuthentication() {
+
+    carregarContas();
+
+    if (localStorage.getItem("bytehuntGuest") === "true") {
+        enterAsGuest();
+        return;
+    }
+
+    const emailAtual = localStorage.getItem("bytehuntCurrentUser");
+
+    if (emailAtual) {
+        const conta = savedAccounts.find(function(c) {
+            return c.email === emailAtual;
+        });
+        if (conta) {
+            enterApplication(conta);
+            return;
+        }
+    }
+
+    showAuthScreen();
+}
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function getInitials(name) {
+
+    if (!name || !name.trim()) return "U";
+
+    const words = name.trim().split(/\s+/);
+
+    if (words.length === 1) {
+        return words[0].substring(0, 2).toUpperCase();
+    }
+
+    return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+}
+
+
+function formatPrice(v) {
+
+    return "R$ " + Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+}
+
+
+function escapeHtml(str) {
+
+    return String(str).replace(/[&<>"']/g, function(c) {
+
+        return {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        }[c];
+    });
+}
+
+
+/* =========================================================
+   NAVEGAÇÃO
+========================================================= */
+
+function showPage(pageId, element) {
+
+    document
+        .querySelectorAll(".page")
+        .forEach(function(p) {
+            p.classList.remove("active");
+        });
+
+    const target = document.getElementById(pageId);
+    if (target) target.classList.add("active");
+
+
+    if (pageId === "avaliacoes") renderReviews();
+    if (pageId === "perfil") renderProfile();
+    if (pageId === "favoritos") renderFavorites();
+    if (pageId === "home") renderHomeProducts();
+
+    if (pageId === "explorar") {
+        const searchEl = document.getElementById("searchInput");
+        if (searchEl) searchEl.value = "";
+
+        const titleEl = document.querySelector("#explorar .page-title");
+
+        if (titleEl) {
+            const labels = {
+                TODOS: "Explorar peças",
+                GPU: "Placas de vídeo",
+                CPU: "Processadores",
+                RAM: "Memórias",
+                MB: "Placas-mãe",
+                PSU: "Fontes"
+            };
+            titleEl.textContent = labels[exploreState.category] || "Explorar peças";
+        }
+
+        renderAllProducts(
+            exploreState.category === "TODOS"
+                ? products
+                : products.filter(function(p) {
+                    return p.category === exploreState.category;
+                })
+        );
+    }
+
+
+    document
+        .querySelectorAll(".nav-item")
+        .forEach(function(i) {
+            i.classList.remove("active");
+        });
+
+    if (element && element.classList.contains("nav-item")) {
+        element.classList.add("active");
+    } else {
+        const map = {
+            home: "Início",
+            explorar: "Explorar",
+            avaliacoes: "Avaliações",
+            favoritos: "Favoritos",
+            perfil: "Meu perfil"
+        };
+
+        document
+            .querySelectorAll(".nav-item")
+            .forEach(function(item) {
+                if (item.innerText.trim().startsWith(map[pageId])) {
+                    item.classList.add("active");
+                }
+            });
+    }
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+
+/* =========================================================
+   PERFIL
+========================================================= */
+
+function loadProfile() {
+
+    const saved = localStorage.getItem("bytehuntProfile");
+
+    if (saved) {
+        try { profile = Object.assign(profile, JSON.parse(saved)); } catch (e) {}
+    }
+
+    updateProfileInterface();
+}
+
+
+function updateProfileInterface() {
+
+    const initials = getInitials(profile.name);
+
+    updateAvatarElement(document.getElementById("topbarAvatar"), profile.photo, initials);
+    updateAvatarElement(document.getElementById("profileAvatar"), profile.photo, initials);
+
+    const topbarName = document.getElementById("topbarName");
+    if (topbarName) topbarName.textContent = profile.name.split(" ")[0];
+
+    const el = function(id) { return document.getElementById(id); };
+
+    if (el("profileNameDisplay")) el("profileNameDisplay").textContent = profile.name;
+    if (el("profileUsernameDisplay")) el("profileUsernameDisplay").textContent = "@" + profile.username;
+    if (el("profileMemberSince")) el("profileMemberSince").textContent = profile.memberSince;
+    if (el("profileNameInfo")) el("profileNameInfo").textContent = profile.name;
+    if (el("profileUsernameInfo")) el("profileUsernameInfo").textContent = "@" + profile.username;
+    if (el("profileEmailDisplay")) el("profileEmailDisplay").textContent = profile.email || "Não informado";
+    if (el("profileLocationDisplay")) el("profileLocationDisplay").textContent = profile.location || "Não informado";
+    if (el("profileBioDisplay")) el("profileBioDisplay").textContent = profile.bio || "Nenhuma biografia informada.";
+}
+
+
+function updateAvatarElement(el, photo, initials) {
+
+    if (!el) return;
+
+    if (photo) {
+        el.innerHTML = '<img src="' + photo + '" alt="Foto de perfil">';
+    } else {
+        el.textContent = initials;
+    }
+}
+
+
+function openProfileModal() {
+
+    document.getElementById("profileName").value = profile.name;
+    document.getElementById("profileUsername").value = profile.username;
+    document.getElementById("profileEmail").value = profile.email;
+    document.getElementById("profileLocation").value = profile.location;
+    document.getElementById("profileBio").value = profile.bio;
+
+    updatePhotoPreview();
+    document.getElementById("profileModal").classList.add("active");
+}
+
+
+function closeProfileModal() {
+    document.getElementById("profileModal").classList.remove("active");
+}
+
+
+function previewProfilePhoto(event) {
+
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+        alert("Por favor, escolha uma imagem válida.");
+        event.target.value = "";
+        return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        profile.photo = e.target.result;
+        updatePhotoPreview();
+    };
+
+    reader.readAsDataURL(file);
+}
+
+
+function updatePhotoPreview() {
+
+    const preview = document.getElementById("photoPreview");
+    const nameInput = document.getElementById("profileName");
+    const initials = getInitials(nameInput.value || profile.name);
+
+    if (profile.photo) {
+        preview.innerHTML = '<img src="' + profile.photo + '" alt="Preview">';
+    } else {
+        preview.textContent = initials;
+    }
+}
+
+
+function removeProfilePhoto() {
+
+    profile.photo = "";
+    document.getElementById("profilePhoto").value = "";
+    updatePhotoPreview();
+}
+
+
+function saveProfile() {
+
+    const name = document.getElementById("profileName").value.trim();
+    const username = document.getElementById("profileUsername").value.trim();
+    const email = document.getElementById("profileEmail").value.trim();
+    const location = document.getElementById("profileLocation").value.trim();
+    const bio = document.getElementById("profileBio").value.trim();
+
+    if (!name) { alert("Digite seu nome."); return; }
+    if (!username) { alert("Digite um nome de usuário."); return; }
+
+    profile.name = name;
+    profile.username = username.replace(/\s+/g, "").replace(/^@/, "");
+    profile.email = email;
+    profile.location = location;
+    profile.bio = bio;
+
+    localStorage.setItem("bytehuntProfile", JSON.stringify(profile));
+
+    // atualiza conta no "banco local"
+    const emailAtual = localStorage.getItem("bytehuntCurrentUser");
+    const conta = savedAccounts.find(function(c) { return c.email === emailAtual; });
+
+    if (conta) {
+        conta.name = profile.name;
+        conta.username = profile.username;
+        conta.location = profile.location;
+        conta.bio = profile.bio;
+        conta.photo = profile.photo;
+        salvarContas();
+    }
+
+    updateProfileInterface();
+    renderProfile();
+    closeProfileModal();
+
+    alert("Perfil atualizado com sucesso.");
+}
+
+
+/* =========================================================
+   FAVORITOS
+========================================================= */
+
+function loadFavorites() {
+
+    const saved = localStorage.getItem("bytehuntFavorites");
+
+    if (saved) {
+        try { favorites = JSON.parse(saved); } catch (e) { favorites = []; }
+    }
+
+    renderFavorites();
+}
+
+
+function saveFavorites() {
+    localStorage.setItem("bytehuntFavorites", JSON.stringify(favorites));
+}
+
+
+function isFavorite(name) {
+    return favorites.some(function(f) { return f.name === name; });
+}
+
+
+function toggleFavorite(element, name, price, icon, description, category) {
+
+    if (isFavorite(name)) {
+
+        favorites = favorites.filter(function(f) { return f.name !== name; });
+
+        if (element) {
+            element.classList.remove("active");
+            element.textContent = "Favoritar";
+        }
+
+    } else {
+
+        favorites.push({ name, price, icon, description, category });
+
+        if (element) {
+            element.classList.add("active");
+            element.textContent = "Favoritado";
+        }
+    }
+
+    saveFavorites();
+    renderFavorites();
+    renderProfile();
+}
+
+
+function renderFavorites() {
+
+    const container = document.getElementById("favoriteList");
+    if (!container) return;
+
+    const countEl = document.getElementById("favoritesCount");
+    if (countEl) {
+        countEl.textContent = favorites.length + (favorites.length === 1 ? " item" : " itens");
+    }
+
+    if (favorites.length === 0) {
+        container.innerHTML =
+            '<div class="empty" style="grid-column:1/-1;">' +
+                '<h2>Nenhum favorito ainda</h2>' +
+                '<p>Clique em favoritar em uma peça para adicioná-la aqui.</p>' +
+                '<button class="btn btn-primary" style="margin-top:12px;" onclick="showPage(\'explorar\')">Explorar peças</button>' +
+            '</div>';
+        return;
+    }
+
+    container.innerHTML = favorites.map(function(f) {
+
+        const icon = f.icon || f.category || "PEÇA";
+
+        return (
+            '<div class="product-card">' +
+
+                '<div class="product-card-img">' + escapeHtml(icon) + '</div>' +
+
+                '<div class="product-card-body">' +
+
+                    '<span class="product-card-cat">' + escapeHtml(f.category || "") + '</span>' +
+
+                    '<div class="product-card-name">' + escapeHtml(f.name) + '</div>' +
+
+                    '<div class="product-card-price">' + formatPrice(f.price) + '</div>' +
+
+                    '<div class="fav-card-actions">' +
+
+                        '<button class="btn btn-outline fav-card-btn" onclick="event.stopPropagation(); openProduct(' +
+                            JSON.stringify(f.name) + ',' +
+                            Number(f.price) + ',' +
+                            JSON.stringify(icon) + ',' +
+                            JSON.stringify(f.description) + ',' +
+                            JSON.stringify(f.category) +
+                        ')">Ver</button>' +
+
+                        '<button class="btn btn-outline fav-card-btn fav-card-remove" onclick="event.stopPropagation(); removeFavoriteByName(' +
+                            JSON.stringify(f.name) +
+                        ')">Remover</button>' +
+
+                    '</div>' +
+
+                '</div>' +
+
+            '</div>'
+        );
+
+    }).join("");
+}
+
+
+function removeFavoriteByName(name) {
+
+    favorites = favorites.filter(function(f) { return f.name !== name; });
+
+    saveFavorites();
+    renderFavorites();
+    renderHomeProducts();
+    renderAllProducts();
+    renderProfile();
+    updateDetailFavButton();
+}
+
+
+/* =========================================================
+   HOME — RENDER
+========================================================= */
+
+function renderHomeProducts() {
+
+    const container = document.getElementById("homeProducts");
+    if (!container) return;
+
+    const list = products
+        .slice()
+        .sort(function(a, b) { return (b.votes || 0) - (a.votes || 0); })
+        .slice(0, 8);
+
+    if (list.length === 0) {
+        container.innerHTML =
+            '<div class="empty" style="grid-column:1/-1;"><h2>Nenhuma peça ainda</h2><p>Seja o primeiro a anunciar.</p></div>';
+        return;
+    }
+
+    container.innerHTML = list.map(createProductCardHTML).join("");
+}
+
+
+function createProductCardHTML(product) {
+
+    const icon = product.icon || "PEÇA";
+
+    return (
+        '<div class="product-card" onclick="openProduct(' +
+            JSON.stringify(product.name) + ',' +
+            Number(product.price) + ',' +
+            JSON.stringify(icon) + ',' +
+            JSON.stringify(product.description) + ',' +
+            JSON.stringify(product.category) +
+        ')">' +
+
+            '<div class="product-card-img">' + escapeHtml(icon) + '</div>' +
+
+            '<div class="product-card-body">' +
+
+                '<span class="product-card-cat">' + escapeHtml(product.category) + '</span>' +
+
+                '<div class="product-card-name">' + escapeHtml(product.name) + '</div>' +
+
+                '<div class="product-card-price">' + formatPrice(product.price) + '</div>' +
+
+            '</div>' +
+
+        '</div>'
+    );
+}
+
+
+function createMyAdCardHTML(product) {
+
+    const icon = product.icon || "PEÇA";
+
+    return (
+        '<div class="product-card">' +
+
+            '<div class="product-card-img" onclick="openProduct(' +
+                JSON.stringify(product.name) + ',' +
+                Number(product.price) + ',' +
+                JSON.stringify(icon) + ',' +
+                JSON.stringify(product.description) + ',' +
+                JSON.stringify(product.category) +
+            ')">' + escapeHtml(icon) + '</div>' +
+
+            '<div class="product-card-body">' +
+
+                '<span class="product-card-cat">' + escapeHtml(product.category) + '</span>' +
+
+                '<div class="product-card-name">' + escapeHtml(product.name) + '</div>' +
+
+                '<div class="product-card-price">' + formatPrice(product.price) + '</div>' +
+
+                '<div class="fav-card-actions">' +
+
+                    '<button class="btn btn-outline fav-card-btn" onclick="event.stopPropagation(); openModal(' +
+                        JSON.stringify(product.name) +
+                    ')">Editar</button>' +
+
+                    '<button class="btn btn-outline fav-card-btn fav-card-remove" onclick="event.stopPropagation(); deleteProduct(' +
+                        JSON.stringify(product.name) +
+                    ')">Excluir</button>' +
+
+                '</div>' +
+
+            '</div>' +
+
+        '</div>'
+    );
+}
+
+
+/* =========================================================
+   EXPLORAR — RENDER
+========================================================= */
+
+function renderAllProducts(list) {
+
+    const container = document.getElementById("allProducts");
+    if (!container) return;
+
+    if (list === undefined) list = products;
+
+    const sorted = list.slice().sort(function(a, b) {
+
+        if (exploreState.sort === "price-asc") return Number(a.price) - Number(b.price);
+        if (exploreState.sort === "price-desc") return Number(b.price) - Number(a.price);
+        if (exploreState.sort === "votes") return (b.votes || 0) - (a.votes || 0);
+        return 0;
+    });
+
+    const countEl = document.getElementById("exploreCount");
+
+    if (countEl) {
+        countEl.textContent = sorted.length + (sorted.length === 1 ? " peça encontrada" : " peças encontradas");
+    }
+
+    if (sorted.length === 0) {
+        container.innerHTML =
+            '<div class="empty" style="grid-column:1/-1;">' +
+                '<h2>Nenhuma peça encontrada</h2>' +
+                '<p>Tente outra categoria ou limpe os filtros.</p>' +
+            '</div>';
+        return;
+    }
+
+    container.innerHTML = sorted.map(createProductCardHTML).join("");
+}
+
+
+function applyFilter(category, element) {
+
+    exploreState.category = category;
+
+    document
+        .querySelectorAll("#explorar .explore-filters .tab")
+        .forEach(function(b) { b.classList.remove("active"); });
+
+    if (element) element.classList.add("active");
+
+    if (category === "TODOS") {
+        renderAllProducts(products);
+    } else {
+        renderAllProducts(products.filter(function(p) { return p.category === category; }));
+    }
+}
+
+
+function applyExploreSort(value) {
+
+    exploreState.sort = value;
+
+    if (exploreState.category === "TODOS") {
+        renderAllProducts(products);
+    } else {
+        renderAllProducts(products.filter(function(p) { return p.category === exploreState.category; }));
+    }
+}
+
+
+function filterCategory(category) {
+
+    showPage("explorar");
+
+    exploreState.category = category;
+
+    document
+        .querySelectorAll("#explorar .explore-filters .tab")
+        .forEach(function(b) {
+
+            const label = b.textContent.trim();
+
+            const map = {
+                "Todas": "TODOS",
+                "Placas de vídeo": "GPU",
+                "Processadores": "CPU",
+                "Memórias": "RAM",
+                "Placas-mãe": "MB",
+                "Fontes": "PSU"
+            };
+
+            if (map[label] === category) b.classList.add("active");
+            else b.classList.remove("active");
+        });
+
+    renderAllProducts(products.filter(function(p) { return p.category === category; }));
+}
+
+
+function searchProducts() {
+
+    const search = document.getElementById("searchInput").value.toLowerCase().trim();
+
+    if (!search) {
+        showPage("explorar");
+        exploreState.category = "TODOS";
+
+        document
+            .querySelectorAll("#explorar .explore-filters .tab")
+            .forEach(function(b, i) {
+                if (i === 0) b.classList.add("active");
+                else b.classList.remove("active");
+            });
+
+        renderAllProducts(products);
+        return;
+    }
+
+    const result = products.filter(function(p) {
+        return (
+            p.name.toLowerCase().includes(search) ||
+            p.category.toLowerCase().includes(search) ||
+            (p.description || "").toLowerCase().includes(search)
+        );
+    });
+
+    showPage("explorar");
+    renderAllProducts(result);
+}
+
+
+/* =========================================================
+   DETALHES
+========================================================= */
+
+function openProduct(name, price, icon, description, category) {
+
+    currentDetailProduct = { name, price, icon, description, category };
+
+    document.getElementById("detailName").textContent = name;
+    document.getElementById("detailPrice").textContent = formatPrice(price);
+    document.getElementById("detailIcon").textContent = icon;
+    document.getElementById("detailCategory").textContent = CATEGORY_LABEL[category] || category;
+    document.getElementById("detailDescription").textContent =
+        description || "Peça usada anunciada por um membro da comunidade ByteHunt.";
+
+    const product = products.find(function(p) { return p.name === name; });
+    const sellerName = product && product.owner ? product.owner : "JoãoPC";
+
+    document.getElementById("detailSellerName").textContent = sellerName;
+
+    refreshDetailReviews();
+    updateDetailFavButton();
+
+    showPage("detalhes");
+}
+
+
+function refreshDetailReviews() {
+
+    if (!currentDetailProduct) return;
+
+    const sellerName = document.getElementById("detailSellerName").textContent.trim();
+
+    const sellerReviews = reviews.filter(function(r) { return r.sellerName === sellerName; });
+
+    const sellerAvg = sellerReviews.length > 0
+        ? (sellerReviews.reduce(function(acc, r) { return acc + r.rating; }, 0) / sellerReviews.length).toFixed(1)
+        : "—";
+
+    document.getElementById("detailSellerInfo").textContent =
+        "Avaliação " + sellerAvg +
+        " (" + sellerReviews.length +
+        (sellerReviews.length === 1 ? " avaliação" : " avaliações") + ")";
+
+    const container = document.getElementById("detailReviewsList");
+
+    if (sellerReviews.length === 0) {
+        container.innerHTML =
+            '<div class="empty"><h2>Sem avaliações ainda</h2><p>Este vendedor ainda não recebeu avaliações.</p></div>';
+        return;
+    }
+
+    container.innerHTML = sellerReviews
+        .slice()
+        .sort(function(a, b) { return new Date(b.date) - new Date(a.date); })
+        .map(createReviewHTML)
+        .join("");
+}
+
+
+function updateDetailFavButton() {
+
+    const btn = document.getElementById("detailFavBtn");
+    if (!btn || !currentDetailProduct) return;
+
+    const fav = isFavorite(currentDetailProduct.name);
+
+    btn.classList.toggle("active", fav);
+    btn.textContent = fav ? "✓ Favoritado" : "Favoritar";
+}
+
+
+function toggleFavoriteFromDetail(btn) {
+
+    if (!currentDetailProduct) return;
+
+    toggleFavorite(
+        btn,
+        currentDetailProduct.name,
+        currentDetailProduct.price,
+        currentDetailProduct.icon,
+        currentDetailProduct.description,
+        currentDetailProduct.category
+    );
+
+    updateDetailFavButton();
+}
+
+
+function contatarVendedor() {
+
+    const seller = document.getElementById("detailSellerName").textContent.trim();
+
+    alert("Em breve você poderá conversar com " + seller + " pelo sistema de mensagens do ByteHunt.");
+}
+
+
+/* =========================================================
+   AVALIAÇÕES — RENDER
+========================================================= */
+
+function renderReviews() {
+
+    const container = document.getElementById("reviewsList");
+    if (!container) return;
+
+    const sorted = reviews.slice().sort(function(a, b) {
+
+        if (currentReviewSort === "best") return b.rating - a.rating;
+        if (currentReviewSort === "worst") return a.rating - b.rating;
+        return new Date(b.date) - new Date(a.date);
+    });
+
+    updateReviewStats();
+
+    if (sorted.length === 0) {
+        container.innerHTML =
+            '<div class="empty"><h2>Nenhuma avaliação ainda</h2><p>As avaliações aparecerão aqui.</p></div>';
+        return;
+    }
+
+    container.innerHTML = sorted.map(createReviewHTML).join("");
+}
+
+
+function createReviewHTML(review) {
+
+    const initials = getInitials(review.buyerName);
+    const stars = renderStars(review.rating);
+
+    return (
+        '<div class="review-card" data-id="' + review.id + '">' +
+
+            '<div class="review-avatar">' + escapeHtml(initials) + '</div>' +
+
+            '<div class="review-body">' +
+
+                '<div class="review-header">' +
+
+                    '<div class="review-author">' +
+                        escapeHtml(review.buyerName) +
+                        '<small>avaliou <b>@' + escapeHtml(review.sellerName) + '</b></small>' +
+                    '</div>' +
+
+                    '<div class="review-stars">' + stars + '</div>' +
+
+                '</div>' +
+
+                '<p class="review-text">' + escapeHtml(review.text) + '</p>' +
+
+                '<div class="review-footer">' +
+
+                    '<span class="review-date">' + formatReviewDate(review.date) + '</span>' +
+
+                    '<div class="review-actions">' +
+                        '<button class="review-helpful ' + (review.userHelpful ? "active" : "") +
+                            '" onclick="toggleHelpful(' + review.id + ')">' +
+                            (review.userHelpful ? "✓ " : "") +
+                            "Útil (" + review.helpful + ")" +
+                        '</button>' +
+                    '</div>' +
+
+                '</div>' +
+
+            '</div>' +
+
+        '</div>'
+    );
+}
+
+
+function renderStars(rating) {
+
+    let html = "";
+
+    for (let i = 1; i <= 5; i++) {
+        if (i <= rating) html += '<span>★</span>';
+        else html += '<span class="empty">★</span>';
+    }
+
+    return html;
+}
+
+
+function formatReviewDate(dateStr) {
+
+    const d = new Date(dateStr + "T00:00:00");
+
+    return d.toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+    });
+}
+
+
+function updateReviewStats() {
+
+    const total = reviews.length;
+    if (total === 0) return;
+
+    const sum = reviews.reduce(function(acc, r) { return acc + r.rating; }, 0);
+    const avg = (sum / total).toFixed(1);
+    const five = reviews.filter(function(r) { return r.rating === 5; }).length;
+    const fivePct = Math.round((five / total) * 100);
+
+    const avgEl = document.getElementById("avgRating");
+    const totalEl = document.getElementById("totalReviews");
+    const fiveEl = document.getElementById("fiveStars");
+
+    if (avgEl) avgEl.textContent = avg;
+    if (totalEl) totalEl.textContent = total;
+    if (fiveEl) fiveEl.textContent = fivePct + "%";
+}
+
+
+function applyReviewSort(value) {
+
+    currentReviewSort = value;
+    renderReviews();
+}
+
+
+function toggleHelpful(id) {
+
+    const review = reviews.find(function(r) { return r.id === id; });
+    if (!review) return;
+
+    if (review.userHelpful) {
+        review.helpful -= 1;
+        review.userHelpful = false;
+    } else {
+        review.helpful += 1;
+        review.userHelpful = true;
+    }
+
+    renderReviews();
+}
+
+
+/* =========================================================
+   AVALIAR VENDEDOR — MODAL
+========================================================= */
+
+function openReviewModal(sellerName) {
+
+    if (sellerName.toLowerCase() === (profile.username || "").toLowerCase()) {
+        alert("Você não pode avaliar o próprio anúncio.");
+        return;
+    }
+
+    if (reviewedSellersThisSession.indexOf(sellerName) !== -1) {
+        alert("Você já avaliou este vendedor nesta sessão.");
+        return;
+    }
+
+    reviewModalState.sellerName = sellerName;
+    reviewModalState.rating = 0;
+
+    document.getElementById("reviewModalSeller").innerHTML =
+        'Vendedor: <b>' + escapeHtml(sellerName) + '</b>';
+
+    document.getElementById("reviewComment").value = "";
+
+    setStarRating(0);
+
+    document.getElementById("reviewModal").classList.add("active");
+}
+
+
+function closeReviewModal() {
+    document.getElementById("reviewModal").classList.remove("active");
+}
+
+
+function openReviewModalFromDetail() {
+
+    if (!currentDetailProduct) return;
+
+    const sellerName = document.getElementById("detailSellerName").textContent.trim();
+
+    openReviewModal(sellerName);
+}
+
+
+function setStarRating(value) {
+
+    reviewModalState.rating = value;
+
+    document
+        .querySelectorAll("#starPicker .star")
+        .forEach(function(btn) {
+
+            const v = Number(btn.dataset.value);
+
+            if (v <= value) btn.classList.add("active");
+            else btn.classList.remove("active");
+        });
+
+    const hint = document.getElementById("starHint");
+
+    if (hint) {
+
+        if (value === 0) {
+            hint.textContent = "Clique em uma estrela para dar a nota.";
+        } else {
+            const labels = { 1: "Muito ruim", 2: "Ruim", 3: "Regular", 4: "Bom", 5: "Excelente" };
+            hint.textContent = value + " estrela" + (value === 1 ? "" : "s") + " — " + labels[value];
+        }
+    }
+}
+
+
+function submitReview() {
+
+    if (reviewModalState.rating === 0) {
+        alert("Escolha uma nota de 1 a 5 estrelas.");
+        return;
+    }
+
+    const comment = document.getElementById("reviewComment").value.trim();
+
+    if (!comment) {
+        alert("Escreva um comentário.");
+        return;
+    }
+
+    reviews.push({
+        id: Date.now(),
+        buyerName: profile.name || "Você",
+        sellerName: reviewModalState.sellerName,
+        rating: reviewModalState.rating,
+        text: comment,
+        date: new Date().toISOString().slice(0, 10),
+        helpful: 0,
+        userHelpful: false
+    });
+
+    reviewedSellersThisSession.push(reviewModalState.sellerName);
+
+    closeReviewModal();
+
+    renderReviews();
+    renderProfile();
+
+    if (currentDetailProduct) refreshDetailReviews();
+
+    alert("Avaliação enviada. Obrigado!");
+}
+
+
+/* =========================================================
+   PERFIL — RENDER
+========================================================= */
+
+function renderProfile() {
+
+    if (!profile || !profile.username) return;
+
+    const myUsername = (profile.username || "").toLowerCase();
+
+    const myAds = products.filter(function(p) {
+        return (p.owner || "").toLowerCase() === myUsername;
+    });
+
+    const adsEl = document.getElementById("profileMyAds");
+
+    if (adsEl) {
+
+        if (myAds.length === 0) {
+            adsEl.innerHTML =
+                '<div class="empty" style="grid-column:1/-1;">' +
+                    '<h2>Nenhum anúncio ainda</h2>' +
+                    '<p>Publique sua primeira peça.</p>' +
+                    '<button class="btn btn-primary" style="margin-top:12px;" onclick="openModal()">Anunciar peça</button>' +
+                '</div>';
+        } else {
+            adsEl.innerHTML = myAds.map(createMyAdCardHTML).join("");
+        }
+    }
+
+    const myReviews = reviews.filter(function(r) {
+        return (r.sellerName || "").toLowerCase() === myUsername;
+    });
+
+    const reviewsEl = document.getElementById("profileReviews");
+
+    if (reviewsEl) {
+
+        if (myReviews.length === 0) {
+            reviewsEl.innerHTML =
+                '<div class="empty"><h2>Nenhuma avaliação recebida</h2><p>Quando alguém avaliar você, aparecerá aqui.</p></div>';
+        } else {
+            reviewsEl.innerHTML = myReviews
+                .slice()
+                .sort(function(a, b) { return new Date(b.date) - new Date(a.date); })
+                .map(createReviewHTML)
+                .join("");
+        }
+    }
+
+    const statAds = document.getElementById("statAds");
+    const statFav = document.getElementById("statFavorites");
+    const statRating = document.getElementById("statRating");
+
+    if (statAds) statAds.textContent = myAds.length;
+    if (statFav) statFav.textContent = favorites.length;
+
+    if (statRating) {
+        if (myReviews.length === 0) {
+            statRating.textContent = "—";
+        } else {
+            const avg = myReviews.reduce(function(acc, r) { return acc + r.rating; }, 0) / myReviews.length;
+            statRating.textContent = avg.toFixed(1);
+        }
+    }
+}
+
+
+/* =========================================================
+   VENDEDOR PÚBLICO
+========================================================= */
+
+function openVendorPage(username) {
+
+    const uname = (username || "").toLowerCase();
+    if (!uname) return;
+
+    document.getElementById("vendorNameDisplay").textContent = username;
+    document.getElementById("vendorUsernameDisplay").textContent = "@" + username;
+    document.getElementById("vendorAvatar").textContent = getInitials(username);
+
+    const ads = products.filter(function(p) {
+        return (p.owner || "").toLowerCase() === uname;
+    });
+
+    const adsEl = document.getElementById("vendorAds");
+
+    if (ads.length === 0) {
+        adsEl.innerHTML = '<div class="empty" style="grid-column:1/-1;"><h2>Nenhum anúncio ativo</h2></div>';
+    } else {
+        adsEl.innerHTML = ads.map(createProductCardHTML).join("");
+    }
+
+    const vendorReviews = reviews.filter(function(r) {
+        return (r.sellerName || "").toLowerCase() === uname;
+    });
+
+    const reviewsEl = document.getElementById("vendorReviews");
+
+    if (vendorReviews.length === 0) {
+        reviewsEl.innerHTML = '<div class="empty"><h2>Sem avaliações ainda</h2></div>';
+    } else {
+        reviewsEl.innerHTML = vendorReviews
+            .slice()
+            .sort(function(a, b) { return new Date(b.date) - new Date(a.date); })
+            .map(createReviewHTML)
+            .join("");
+    }
+
+    if (vendorReviews.length > 0) {
+        const avg = vendorReviews.reduce(function(acc, r) { return acc + r.rating; }, 0) / vendorReviews.length;
+        document.getElementById("vendorAvg").textContent = avg.toFixed(1);
+    } else {
+        document.getElementById("vendorAvg").textContent = "—";
+    }
+
+    document.getElementById("vendorReviewCount").textContent =
+        vendorReviews.length + (vendorReviews.length === 1 ? " avaliação" : " avaliações");
+
+    showPage("vendedor");
+}
+
+
+/* =========================================================
+   MODAL ANÚNCIO — CRIAR / EDITAR / EXCLUIR
+========================================================= */
+
+function openModal(productName) {
+
+    if (productName) {
+
+        const product = products.find(function(p) { return p.name === productName; });
+        if (!product) return;
+
+        editingProductName = productName;
+
+        document.getElementById("newName").value = product.name;
+        document.getElementById("newCategory").value = product.category;
+        document.getElementById("newPrice").value = product.price;
+        document.getElementById("newDescription").value = product.description || "";
+
+        document.querySelector("#productModal .modal-head h2").textContent = "Editar anúncio";
+        document.querySelector("#productModal .modal-foot .btn-primary").textContent = "Salvar alterações";
+
+    } else {
+
+        editingProductName = null;
+
+        document.getElementById("newName").value = "";
+        document.getElementById("newPrice").value = "";
+        document.getElementById("newDescription").value = "";
+
+        document.querySelector("#productModal .modal-head h2").textContent = "Anunciar peça";
+        document.querySelector("#productModal .modal-foot .btn-primary").textContent = "Publicar";
+    }
+
+    document.getElementById("productModal").classList.add("active");
+}
+
+
+function closeModal() {
+
+    document.getElementById("productModal").classList.remove("active");
+
+    editingProductName = null;
+
+    document.getElementById("newName").value = "";
+    document.getElementById("newPrice").value = "";
+    document.getElementById("newDescription").value = "";
+
+    document.querySelector("#productModal .modal-head h2").textContent = "Anunciar peça";
+    document.querySelector("#productModal .modal-foot .btn-primary").textContent = "Publicar";
+}
+
+
+function publishProduct() {
+
+    const name = document.getElementById("newName").value.trim();
+    const category = document.getElementById("newCategory").value;
+    const price = document.getElementById("newPrice").value;
+    const description = document.getElementById("newDescription").value.trim();
+
+    if (!name || !price) {
+        alert("Preencha o nome e o preço.");
+        return;
+    }
+
+    if (editingProductName) {
+
+        const product = products.find(function(p) { return p.name === editingProductName; });
+
+        if (!product) {
+            alert("Peça não encontrada.");
+            return;
+        }
+
+        product.name = name;
+        product.category = category;
+        product.icon = CATEGORY_LABEL[category] || "PEÇA";
+        product.price = Number(price);
+        product.description = description || "Peça usada anunciada por um membro da comunidade.";
+
+        editingProductName = null;
+
+    } else {
+
+        products.unshift({
+            name: name,
+            price: Number(price),
+            category: category,
+            icon: CATEGORY_LABEL[category] || "PEÇA",
+            description: description || "Peça usada anunciada por um membro da comunidade.",
+            votes: 0,
+            owner: profile.username
+        });
+    }
+
+    closeModal();
+
+    renderHomeProducts();
+    renderAllProducts();
+    renderProfile();
+}
+
+
+function deleteProduct(name) {
+
+    if (!confirm('Excluir o anúncio "' + name + '"?')) return;
+
+    products = products.filter(function(p) { return p.name !== name; });
+
+    renderHomeProducts();
+    renderAllProducts();
+    renderProfile();
+}
+
+
+/* =========================================================
+   FECHAR MODAIS AO CLICAR FORA
+========================================================= */
+
+window.addEventListener("click", function(event) {
+
+    const productModal = document.getElementById("productModal");
+    const profileModal = document.getElementById("profileModal");
+    const reviewModal = document.getElementById("reviewModal");
+
+    if (event.target === productModal) closeModal();
+    if (event.target === profileModal) closeProfileModal();
+    if (event.target === reviewModal) closeReviewModal();
+});
+
+
+/* =========================================================
+   ATUALIZAR PREVIEW DO PERFIL AO DIGITAR NOME
+========================================================= */
+
+document.addEventListener("input", function(event) {
+
+    if (event.target.id === "profileName") {
+        if (!profile.photo) updatePhotoPreview();
+    }
+});
+
+
+/* =========================================================
+   INIT
+========================================================= */
+
+window.addEventListener("DOMContentLoaded", function() {
+
+    loadProfile();
+    loadFavorites();
+    renderHomeProducts();
+    renderAllProducts();
+    renderReviews();
+    renderProfile();
+    checkAuthentication();
+});
+
+</script>
+
+</body>
+</html>
