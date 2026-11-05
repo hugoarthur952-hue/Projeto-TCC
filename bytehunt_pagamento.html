@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ByteHunt | Pagamento</title>
+<style>
+:root{--azul:#071b3a;--azul2:#0d2a56;--laranja:#ff7a00;--laranja2:#ff9d3d;--fundo:#f3f5f9;--texto:#17243a;--cinza:#68758a;--borda:#dce2eb}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--fundo);color:var(--texto)}
+header{background:var(--azul);color:white;padding:19px 7%;display:flex;justify-content:space-between;align-items:center;box-shadow:0 3px 12px #071b3a22}
+.logo{font-size:24px;font-weight:800}.logo span{color:var(--laranja)}header a{color:white;text-decoration:none}
+main{width:min(1080px,92%);margin:38px auto 60px}h1{color:var(--azul);margin:0 0 8px}.sub{color:var(--cinza);margin:0 0 28px}
+.layout{display:grid;grid-template-columns:1.55fr 1fr;gap:24px;align-items:start}.card{background:white;border:1px solid var(--borda);border-radius:14px;padding:24px;box-shadow:0 5px 20px #071b3a0b}
+h2{font-size:18px;color:var(--azul);margin:0 0 20px}.metodos{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:22px}
+.metodo{border:1.5px solid var(--borda);background:white;border-radius:10px;padding:14px 8px;cursor:pointer;color:var(--azul);font-weight:bold}
+.metodo small{display:block;color:var(--cinza);font-weight:normal;margin-top:5px}.metodo.ativo{border-color:var(--laranja);background:#fff6ed}
+label{display:block;font-size:13px;font-weight:bold;color:var(--azul);margin:14px 0 7px}
+input,select{width:100%;padding:12px 13px;border:1px solid var(--borda);border-radius:8px;font-size:14px;background:white}
+input:focus{outline:2px solid #ff7a0030;border-color:var(--laranja)}.duas{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.info{background:#fff6ed;border:1px solid #ffd3ad;border-radius:9px;padding:15px;color:#6d3a0c;line-height:1.5;font-size:14px}.escondido{display:none}
+.produto{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--borda);font-size:14px}.produto span{color:var(--cinza)}
+.linha{display:flex;justify-content:space-between;margin-top:15px;font-size:14px}.total{display:flex;justify-content:space-between;margin-top:18px;padding-top:17px;border-top:1px solid var(--borda);color:var(--azul);font-weight:800;font-size:20px}
+.botao{width:100%;margin-top:23px;border:0;border-radius:9px;padding:15px;background:var(--laranja);color:white;font-size:15px;font-weight:800;cursor:pointer}.botao:hover{background:#e96e00}
+.resumo{position:sticky;top:20px}.seguro{text-align:center;color:var(--cinza);font-size:12px;margin-top:13px}footer{text-align:center;color:var(--cinza);padding:20px;font-size:12px}
+@media(max-width:760px){.layout{grid-template-columns:1fr}.resumo{position:static}.metodos{grid-template-columns:1fr}header{padding:17px 5%}main{margin-top:27px}}
+</style></head>
+<body>
+<header><div class="logo">Byte<span>Hunt</span></div><a href="#" onclick="history.back();return false">← Voltar</a></header>
+<main><h1>Finalizar compra</h1><p class="sub">Confira seu pedido e escolha a forma de pagamento.</p>
+<div class="layout">
+<section class="card"><h2>Forma de pagamento</h2>
+<div class="metodos">
+<button class="metodo ativo" data-metodo="pix" type="button">PIX<small>Aprovação rápida</small></button>
+<button class="metodo" data-metodo="cartao" type="button">Cartão<small>Crédito ou débito</small></button>
+<button class="metodo" data-metodo="boleto" type="button">Boleto<small>Pagamento bancário</small></button>
+</div>
+<div id="pix" class="painel"><div class="info"><strong>Pagamento via PIX</strong><br>Ao confirmar, será gerado um QR Code ou código PIX para concluir o pagamento. Esta é uma demonstração visual.</div></div>
+<div id="cartao" class="painel escondido">
+<label for="titular">Nome impresso no cartão</label><input id="titular" placeholder="Nome completo">
+<label for="numero">Número do cartão</label><input id="numero" inputmode="numeric" placeholder="0000 0000 0000 0000" maxlength="19">
+<div class="duas"><div><label for="validade">Validade</label><input id="validade" placeholder="MM/AA" maxlength="5"></div><div><label for="cvv">CVV</label><input id="cvv" inputmode="numeric" placeholder="000" maxlength="4"></div></div>
+<label for="parcelas">Parcelamento</label><select id="parcelas"><option>1x de R$ 870,00</option><option>2x de R$ 435,00 sem juros</option><option>3x de R$ 290,00 sem juros</option></select>
+</div>
+<div id="boleto" class="painel escondido"><div class="info"><strong>Pagamento via boleto</strong><br>Ao confirmar, um boleto será disponibilizado para pagamento. A compensação pode levar alguns dias úteis.</div></div>
+</section>
+<aside class="card resumo"><h2>Resumo do pedido</h2>
+<div class="produto"><span>Produto</span><strong>Placa de vídeo usada</strong></div><div class="produto"><span>Quantidade</span><strong>1 unidade</strong></div>
+<div class="linha"><span>Subtotal</span><strong>R$ 850,00</strong></div><div class="linha"><span>Frete</span><strong>R$ 20,00</strong></div>
+<div class="total"><span>Total</span><span>R$ 870,00</span></div>
+<button class="botao" id="confirmar" type="button">Confirmar pagamento</button><p class="seguro">Seus dados devem ser processados por um serviço de pagamento seguro.</p>
+</aside></div></main><footer>ByteHunt © 2026 — Garimpe com inteligência.</footer>
+<script>
+const botoes=document.querySelectorAll('.metodo'),paineis=document.querySelectorAll('.painel');let metodo='pix';
+botoes.forEach(b=>b.addEventListener('click',()=>{metodo=b.dataset.metodo;botoes.forEach(x=>x.classList.toggle('ativo',x===b));paineis.forEach(p=>p.classList.toggle('escondido',p.id!==metodo));}));
+document.getElementById('confirmar').addEventListener('click',()=>{if(metodo==='cartao'&&['titular','numero','validade','cvv'].some(id=>!document.getElementById(id).value.trim())){alert('Preencha os dados do cartão para continuar.');return;}alert('Tela demonstrativa: conecte um gateway de pagamento para processar a compra de verdade.');});
+document.getElementById('numero').addEventListener('input',e=>{let v=e.target.value.replace(/\D/g,'').slice(0,16);e.target.value=v.replace(/(\d{4})(?=\d)/g,'$1 ');});
+</script></body></html>
