@@ -4076,5 +4076,3211 @@ document.addEventListener("change", function(event) {
 
 </script>
 
+<script>
+/* BYTEHUNT — PAGAMENTOS E ADMINISTRAÇÃO LOCAL */
+
+(function () {
+    const ORDER_KEY = 'bytehuntDemoOrders';
+    const FRETE = 20;
+
+    let checkout = null;
+    let metodo = 'pix';
+    let concluindo = false;
+
+    const el = id => document.getElementById(id);
+
+    const seguro = valor =>
+        escapeHtml(String(valor == null ? '' : valor));
+
+    // CONTAS ADMINISTRATIVAS DE DEMONSTRAÇÃO
+
+    carregarContas();
+
+    if (!Array.isArray(savedAccounts)) {
+        savedAccounts = [];
+    }
+
+    BYTEHUNT_ADMIN_EMAILS.forEach((email, indice) => {
+        const existe = savedAccounts.some(conta =>
+            (conta.email || '').toLowerCase() === email
+        );
+
+        if (!existe) {
+            savedAccounts.push({
+                name: 'Administrador ' + (indice + 1),
+                username: 'admin' + (indice + 1),
+                email: email,
+                password: 'ByteHunt@2026',
+                location: '',
+                bio: 'Administrador de demonstração.',
+                photo: '',
+                memberSince: '2026'
+            });
+        }
+    });
+
+    salvarContas();
+
+    const contaAnterior = currentAccount;
+
+    currentAccount = function () {
+        if (localStorage.getItem('bytehuntGuest') === 'true') {
+            return null;
+        }
+
+        return contaAnterior();
+    };
+
+    // O login não cria mais uma conta automaticamente.
+    loginLocal = function (evento) {
+        evento.preventDefault();
+
+        const email = el('loginEmail')
+            .value.trim().toLowerCase();
+
+        const senha = el('loginPassword').value;
+
+        const conta = savedAccounts.find(conta =>
+            (conta.email || '').toLowerCase() === email
+        );
+
+        if (!conta || conta.password !== senha) {
+            showAuthMessage(
+                'loginMessage',
+                'E-mail ou senha incorretos. Crie sua conta se ainda não possui uma.',
+                'error'
+            );
+
+            return;
+        }
+
+        clearAuthMessage('loginMessage');
+        enterApplication(conta);
+    };
+
+    const cadastroAnterior = signupLocal;
+
+    signupLocal = function (evento) {
+        const email = el('signupEmail')
+            .value.trim().toLowerCase();
+
+        if (BYTEHUNT_ADMIN_EMAILS.includes(email)) {
+            evento.preventDefault();
+
+            showAuthMessage(
+                'signupMessage',
+                'Este e-mail é reservado para a administração.',
+                'error'
+            );
+
+            return;
+        }
+
+        cadastroAnterior(evento);
+    };
+
+    // ESTILO DAS NOVAS ÁREAS
+
+    const estilo = document.createElement('style');
+
+    estilo.textContent = `
+        .bhx-aviso {
+            background: #fff6ed;
+            border: 1px solid #ffd3ad;
+            border-radius: 9px;
+            padding: 14px;
+            color: #6d3a0c;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .bhx-layout {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .bhx-card {
+            background: white;
+            border: 1px solid var(--borda, #dce2eb);
+            border-radius: 14px;
+            padding: 24px;
+            min-width: 0;
+        }
+
+        .bhx-card h2 {
+            font-size: 18px;
+            color: var(--azul, #071b3a);
+            margin: 0 0 20px;
+        }
+
+        .bhx-metodos {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 22px;
+        }
+
+        .bhx-metodo {
+            border: 1.5px solid #dce2eb;
+            background: white;
+            border-radius: 10px;
+            padding: 14px 8px;
+            cursor: pointer;
+            color: #071b3a;
+            font-weight: bold;
+        }
+
+        .bhx-metodo small {
+            display: block;
+            color: #68758a;
+            font-weight: normal;
+            margin-top: 5px;
+        }
+
+        .bhx-metodo.active {
+            border-color: #ff7a00;
+            background: #fff6ed;
+        }
+
+        .bhx-card label {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            margin: 14px 0 7px;
+        }
+
+        .bhx-card input,
+        .bhx-card select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dce2eb;
+            border-radius: 8px;
+            font: inherit;
+        }
+
+        .bhx-duas {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .bhx-linha {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin: 15px 0;
+            overflow-wrap: anywhere;
+        }
+
+        .bhx-total {
+            padding-top: 18px;
+            border-top: 1px solid #dce2eb;
+            font-size: 21px;
+            font-weight: bold;
+        }
+
+        .bhx-card .btn-block {
+            margin-top: 20px;
+        }
+
+        .bhx-status {
+            margin-top: 16px;
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+        }
+
+        .bhx-tabela {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .bhx-tabela th,
+        .bhx-tabela td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #dce2eb;
+            vertical-align: top;
+            overflow-wrap: anywhere;
+        }
+
+        .bhx-overflow {
+            overflow-x: auto;
+        }
+
+        .bhx-acoes {
+            display: flex;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+
+        .bhx-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 22px;
+        }
+
+        .bhx-stats strong {
+            display: block;
+            font-size: 26px;
+            color: #071b3a;
+        }
+
+        .bhx-stats span {
+            font-size: 13px;
+            color: #68758a;
+        }
+
+        .bhx-vazio {
+            padding: 20px;
+            color: #68758a;
+        }
+
+        .bhx-admin-acesso {
+            margin-top: 16px;
+            font: 12px Arial;
+            color: #d9e9ff;
+            text-align: center;
+            max-width: 430px;
+            line-height: 1.6;
+        }
+
+        #bhxCheckout [hidden] {
+            display: none !important;
+        }
+
+        #bhxCheckout :focus-visible {
+            outline: 3px solid #ff7a00;
+            outline-offset: 3px;
+        }
+
+        @media (max-width: 760px) {
+            .bhx-layout,
+            .bhx-metodos,
+            .bhx-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .bhx-card {
+                padding: 18px;
+            }
+        }
+    `;
+
+    document.head.appendChild(estilo);
+
+    // TELAS DE PAGAMENTO E PEDIDOS
+
+    const principal = document.querySelector('#app .layout main');
+
+    principal.insertAdjacentHTML('beforeend', `
+        <section id="bhxCheckout" class="page">
+            <div class="page-title">Finalizar compra</div>
+
+            <div class="bhx-aviso">
+                Demonstração escolar: não gera PIX ou boleto reais
+                e não realiza cobranças.
+                Não informe dados reais de cartão.
+            </div>
+
+            <button
+                class="btn btn-outline"
+                type="button"
+                id="bhxVoltar"
+                style="margin-bottom:20px"
+            >
+                ← Voltar ao produto
+            </button>
+
+            <div class="bhx-layout">
+                <section class="bhx-card">
+                    <h2>Forma de pagamento</h2>
+
+                    <div
+                        class="bhx-metodos"
+                        role="group"
+                        aria-label="Forma de pagamento demonstrativa"
+                    >
+                        <button
+                            class="bhx-metodo active"
+                            type="button"
+                            data-bhx-metodo="pix"
+                            aria-pressed="true"
+                        >
+                            PIX
+                            <small>Simulação</small>
+                        </button>
+
+                        <button
+                            class="bhx-metodo"
+                            type="button"
+                            data-bhx-metodo="cartao"
+                            aria-pressed="false"
+                        >
+                            Cartão
+                            <small>Dados fictícios</small>
+                        </button>
+
+                        <button
+                            class="bhx-metodo"
+                            type="button"
+                            data-bhx-metodo="boleto"
+                            aria-pressed="false"
+                        >
+                            Boleto
+                            <small>Simulação</small>
+                        </button>
+                    </div>
+
+                    <div id="bhxPix" class="bhx-aviso">
+                        Você escolheu PIX.
+                        Esta demonstração não gera QR Code
+                        nem chave para transferência.
+                    </div>
+
+                    <div id="bhxCartao" hidden>
+                        <p>
+                            Cartão fictício de demonstração.
+                            Os dados abaixo não são enviados nem salvos.
+                        </p>
+
+                        <label for="bhxTitular">Nome no cartão</label>
+                        <input
+                            id="bhxTitular"
+                            value="CLIENTE DEMONSTRAÇÃO"
+                            disabled
+                        >
+
+                        <label for="bhxNumero">Número fictício</label>
+                        <input
+                            id="bhxNumero"
+                            value="4111 1111 1111 1111"
+                            disabled
+                        >
+
+                        <div class="bhx-duas">
+                            <div>
+                                <label for="bhxValidade">
+                                    Validade fictícia
+                                </label>
+
+                                <input
+                                    id="bhxValidade"
+                                    value="12/30"
+                                    disabled
+                                >
+                            </div>
+
+                            <div>
+                                <label for="bhxCvv">CVV fictício</label>
+
+                                <input
+                                    id="bhxCvv"
+                                    value="123"
+                                    disabled
+                                >
+                            </div>
+                        </div>
+
+                        <label for="bhxParcelas">
+                            Parcelamento simulado
+                        </label>
+
+                        <select id="bhxParcelas"></select>
+                    </div>
+
+                    <div id="bhxBoleto" class="bhx-aviso" hidden>
+                        Você escolheu boleto.
+                        Esta demonstração não emite boleto
+                        nem linha digitável.
+                    </div>
+                </section>
+
+                <aside class="bhx-card">
+                    <h2>Resumo do pedido</h2>
+
+                    <div class="bhx-linha">
+                        <span>Produto</span>
+                        <strong id="bhxProduto"></strong>
+                    </div>
+
+                    <div class="bhx-linha">
+                        <span>Quantidade</span>
+                        <strong>1 unidade</strong>
+                    </div>
+
+                    <div class="bhx-linha">
+                        <span>Subtotal</span>
+                        <strong id="bhxSubtotal"></strong>
+                    </div>
+
+                    <div class="bhx-linha">
+                        <span>Frete demonstrativo</span>
+                        <strong id="bhxFrete"></strong>
+                    </div>
+
+                    <div class="bhx-linha bhx-total">
+                        <span>Total</span>
+                        <span id="bhxTotal"></span>
+                    </div>
+
+                    <button
+                        class="btn btn-primary btn-block"
+                        id="bhxConfirmar"
+                        type="button"
+                    >
+                        Concluir simulação
+                    </button>
+
+                    <p
+                        id="bhxMensagem"
+                        class="bhx-status"
+                        role="status"
+                    ></p>
+                </aside>
+            </div>
+        </section>
+
+        <section id="bhxPedidos" class="page">
+            <div class="page-title">
+                Meus pedidos demonstrativos
+            </div>
+
+            <div class="bhx-aviso">
+                Registros locais deste navegador.
+                Nenhum pagamento foi realizado.
+            </div>
+
+            <div id="bhxMeusPedidos"></div>
+        </section>
+    `);
+
+    document.querySelector('.topbar-nav').insertAdjacentHTML(
+        'beforeend',
+        `<a
+            class="topbar-link"
+            onclick="showPage('bhxPedidos', this)"
+        >
+            Meus pedidos
+        </a>`
+    );
+
+    document.querySelector('.detail-actions').insertAdjacentHTML(
+        'afterbegin',
+        `<button
+            class="btn btn-primary btn-block"
+            id="bhxComprar"
+            type="button"
+        >
+            Comprar / Pagamento
+        </button>`
+    );
+
+    // INFORMAÇÕES DE ACESSO ADMINISTRATIVO
+
+    const acesso = document.createElement('details');
+
+    acesso.className = 'bhx-admin-acesso';
+
+    acesso.innerHTML = `
+        <summary>Administração — acesso de demonstração</summary>
+
+        <p>
+            Use ENTRAR com admin1@bytehunt.com até admin5@bytehunt.com.
+            <br>
+            Senha inicial das contas novas:
+            <strong>ByteHunt@2026</strong>.
+            <br>
+            Contas já existentes mantêm a senha anterior.
+            Controle local, sem autenticação de servidor.
+        </p>
+    `;
+
+    document.querySelector('#authHome .pixel-buttons').after(acesso);
+
+    // PEDIDOS LOCAIS
+
+    function lerPedidos() {
+        const dados = JSON.parse(
+            localStorage.getItem(ORDER_KEY) || '[]'
+        );
+
+        if (!Array.isArray(dados)) {
+            throw new Error(
+                'Os pedidos locais não puderam ser lidos.'
+            );
+        }
+
+        return dados;
+    }
+
+    function podeEditar(produto) {
+        const conta = currentAccount();
+
+        return !!conta && (
+            isAdmin() ||
+            (produto.owner || '').toLowerCase() ===
+            (conta.username || '').toLowerCase()
+        );
+    }
+
+    function escolherMetodo(valor) {
+        if (!['pix', 'cartao', 'boleto'].includes(valor)) {
+            return;
+        }
+
+        metodo = valor;
+
+        document.querySelectorAll('[data-bhx-metodo]').forEach(botao => {
+            const ativo = botao.dataset.bhxMetodo === metodo;
+
+            botao.classList.toggle('active', ativo);
+            botao.setAttribute('aria-pressed', String(ativo));
+        });
+
+        el('bhxPix').hidden = metodo !== 'pix';
+        el('bhxCartao').hidden = metodo !== 'cartao';
+        el('bhxBoleto').hidden = metodo !== 'boleto';
+    }
+
+    function atualizarResumo(produto) {
+        checkout.preco = Number(produto.price);
+
+        el('bhxProduto').textContent = produto.name;
+
+        el('bhxSubtotal').textContent =
+            formatPrice(checkout.preco);
+
+        el('bhxFrete').textContent = formatPrice(FRETE);
+
+        el('bhxTotal').textContent =
+            formatPrice(checkout.preco + FRETE);
+
+        el('bhxParcelas').innerHTML = [1, 2, 3].map(numero => {
+            const parcela = formatPrice(
+                (checkout.preco + FRETE) / numero
+            );
+
+            return '<option value="' + numero + '">' +
+                numero + 'x de ' + parcela +
+                (numero > 1 ? ' sem juros' : '') +
+                '</option>';
+        }).join('');
+    }
+
+    function iniciarCompra(produto) {
+        const conta = currentAccount();
+
+        if (!conta) {
+            alert('Entre em sua conta para simular a compra.');
+            showAuthScreen();
+            showAuthPage('login');
+            return;
+        }
+
+        if (
+            !produto ||
+            !produto.id ||
+            !Number.isFinite(Number(produto.price)) ||
+            Number(produto.price) <= 0
+        ) {
+            alert('Selecione um anúncio válido.');
+            return;
+        }
+
+        if (
+            (produto.owner || '').toLowerCase() ===
+            (conta.username || '').toLowerCase()
+        ) {
+            alert('Você não pode comprar seu próprio anúncio.');
+            return;
+        }
+
+        checkout = {
+            produtoId: produto.id,
+            pedidoId:
+                'BH-' +
+                Date.now().toString(36) +
+                '-' +
+                Math.random().toString(36).slice(2, 8)
+        };
+
+        escolherMetodo('pix');
+        atualizarResumo(produto);
+
+        el('bhxMensagem').textContent = '';
+        el('bhxConfirmar').disabled = false;
+
+        showPage('bhxCheckout');
+    }
+
+    el('bhxComprar').onclick = function () {
+        const produto = currentDetailProduct &&
+            productById(currentDetailProduct.id);
+
+        iniciarCompra(produto);
+    };
+
+    el('bhxVoltar').onclick = function () {
+        const produto = checkout &&
+            productById(checkout.produtoId);
+
+        if (produto) {
+            openProductById(produto.id);
+        } else {
+            showPage('explorar');
+        }
+    };
+
+    document.querySelectorAll('[data-bhx-metodo]').forEach(botao => {
+        botao.onclick = function () {
+            escolherMetodo(botao.dataset.bhxMetodo);
+        };
+    });
+
+    el('bhxConfirmar').onclick = function () {
+        if (concluindo || !checkout) return;
+
+        const conta = currentAccount();
+        const produto = productById(checkout.produtoId);
+
+        if (!conta) {
+            alert('Entre novamente para continuar.');
+            showAuthScreen();
+            return;
+        }
+
+        if (!produto) {
+            el('bhxMensagem').textContent =
+                'O anúncio não está mais disponível.';
+            return;
+        }
+
+        if (Number(produto.price) !== checkout.preco) {
+            atualizarResumo(produto);
+
+            el('bhxMensagem').textContent =
+                'O preço mudou. Confira o novo total e confirme novamente.';
+
+            return;
+        }
+
+        concluindo = true;
+
+        try {
+            const pedidos = lerPedidos();
+
+            const jaExiste = pedidos.some(pedido =>
+                pedido.id === checkout.pedidoId
+            );
+
+            if (!jaExiste) {
+                pedidos.unshift({
+                    id: checkout.pedidoId,
+                    produtoId: produto.id,
+                    produto: produto.name,
+                    comprador: conta.email.toLowerCase(),
+                    compradorNome: conta.name,
+                    vendedor: produto.owner || '',
+                    quantidade: 1,
+                    subtotal: checkout.preco,
+                    frete: FRETE,
+                    total: checkout.preco + FRETE,
+                    metodo: metodo,
+                    parcelas: metodo === 'cartao'
+                        ? Number(el('bhxParcelas').value)
+                        : 1,
+                    status: 'SIMULADO',
+                    criadoEm: new Date().toISOString()
+                });
+
+                localStorage.setItem(
+                    ORDER_KEY,
+                    JSON.stringify(pedidos)
+                );
+            }
+
+            this.disabled = true;
+
+            el('bhxMensagem').textContent =
+                'Pedido demonstrativo ' +
+                checkout.pedidoId +
+                ' salvo. Nenhum valor foi cobrado. Consulte Meus pedidos.';
+
+        } catch (erro) {
+            el('bhxMensagem').textContent =
+                'Não foi possível salvar o pedido. ' +
+                'Verifique o armazenamento do navegador.';
+
+        } finally {
+            concluindo = false;
+        }
+    };
+
+    // TABELA DE PEDIDOS
+
+    function tabelaPedidos(pedidos, admin) {
+        if (!pedidos.length) {
+            return '<div class="bhx-vazio">' +
+                'Nenhum pedido demonstrativo.</div>';
+        }
+
+        const linhas = pedidos.map(pedido => {
+            const conta = currentAccount();
+
+            const podeCancelar = (
+                admin ||
+                (
+                    conta &&
+                    pedido.comprador === conta.email.toLowerCase()
+                )
+            ) && pedido.status === 'SIMULADO';
+
+            const nomesMetodos = {
+                pix: 'PIX',
+                cartao: 'Cartão',
+                boleto: 'Boleto'
+            };
+
+            const forma = nomesMetodos[pedido.metodo] ||
+                pedido.metodo;
+
+            const parcelas = pedido.metodo === 'cartao'
+                ? ' · ' + seguro(pedido.parcelas) + 'x'
+                : '';
+
+            const situacao = pedido.status === 'CANCELADO'
+                ? 'Cancelado (demo)'
+                : 'Simulado — sem cobrança';
+
+            const botaoCancelar = podeCancelar
+                ? '<br><button type="button" class="btn btn-outline" ' +
+                  'data-bhx-cancelar="' + seguro(pedido.id) + '">' +
+                  'Cancelar simulação</button>'
+                : '';
+
+            return `
+                <tr>
+                    <td>
+                        ${seguro(pedido.id)}
+                        <br>
+                        <strong>${seguro(pedido.produto)}</strong>
+                    </td>
+
+                    <td>
+                        ${seguro(
+                            new Date(pedido.criadoEm)
+                                .toLocaleString('pt-BR')
+                        )}
+                    </td>
+
+                    ${admin ? `
+                        <td>
+                            ${seguro(pedido.compradorNome)}
+                            <br>
+                            ${seguro(pedido.comprador)}
+                        </td>
+                    ` : ''}
+
+                    <td>${seguro(forma)}${parcelas}</td>
+                    <td>${formatPrice(pedido.total)}</td>
+                    <td>${seguro(situacao)}${botaoCancelar}</td>
+                </tr>
+            `;
+        }).join('');
+
+        return `
+            <div class="bhx-overflow">
+                <table class="bhx-tabela">
+                    <thead>
+                        <tr>
+                            <th>Pedido / produto</th>
+                            <th>Data</th>
+                            ${admin ? '<th>Comprador</th>' : ''}
+                            <th>Método</th>
+                            <th>Total</th>
+                            <th>Situação</th>
+                        </tr>
+                    </thead>
+                    <tbody>${linhas}</tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    function mostrarPedidos() {
+        const conta = currentAccount();
+
+        try {
+            if (!conta) {
+                el('bhxMeusPedidos').innerHTML =
+                    '<div class="bhx-vazio">' +
+                    'Entre na sua conta para consultar seus pedidos.</div>';
+
+                return;
+            }
+
+            const pedidos = lerPedidos().filter(pedido =>
+                pedido.comprador === conta.email.toLowerCase()
+            );
+
+            el('bhxMeusPedidos').innerHTML =
+                tabelaPedidos(pedidos, false);
+
+        } catch (erro) {
+            el('bhxMeusPedidos').textContent =
+                'Não foi possível ler os pedidos locais.';
+        }
+    }
+
+    // PAINEL ADMINISTRATIVO
+
+    renderAdmin = function () {
+        if (!isAdmin()) return;
+
+        let pedidos;
+
+        try {
+            pedidos = lerPedidos();
+        } catch (erro) {
+            pedidos = [];
+        }
+
+        const anunciosHTML = products.map(produto => `
+            <div class="bhx-linha">
+                <div>
+                    <strong>${seguro(produto.name)}</strong>
+                    <br>
+                    ${formatPrice(produto.price)}
+                    · @${seguro(produto.owner || '—')}
+                </div>
+
+                <div class="bhx-acoes">
+                    <button
+                        class="btn btn-outline"
+                        data-action="edit-product"
+                        data-product-id="${seguro(produto.id)}"
+                    >
+                        Editar
+                    </button>
+
+                    <button
+                        class="btn btn-outline"
+                        data-action="delete-product"
+                        data-product-id="${seguro(produto.id)}"
+                    >
+                        Excluir
+                    </button>
+                </div>
+            </div>
+        `).join('');
+
+        const usuariosHTML = savedAccounts.map(conta => {
+            const administrador = BYTEHUNT_ADMIN_EMAILS.includes(
+                (conta.email || '').toLowerCase()
+            );
+
+            return `
+                <div class="bhx-linha">
+                    <div>
+                        <strong>${seguro(conta.name)}</strong>
+                        <br>
+                        @${seguro(conta.username)}
+                        · ${seguro(conta.email)}
+                    </div>
+
+                    <span>
+                        ${administrador ? 'Administrador' : 'Usuário'}
+                    </span>
+                </div>
+            `;
+        }).join('');
+
+        el('admin').innerHTML = `
+            <div class="page-title">Painel administrativo</div>
+
+            <div class="bhx-aviso">
+                Administração local de demonstração.
+                Para publicar com segurança, os logins e permissões
+                precisam ser validados em um servidor.
+            </div>
+
+            <div class="bhx-stats">
+                <div class="bhx-card">
+                    <strong>${products.length}</strong>
+                    <span>Anúncios</span>
+                </div>
+
+                <div class="bhx-card">
+                    <strong>${savedAccounts.length}</strong>
+                    <span>Usuários locais</span>
+                </div>
+
+                <div class="bhx-card">
+                    <strong>${pedidos.length}</strong>
+                    <span>Pedidos demonstrativos</span>
+                </div>
+            </div>
+
+            <div class="box">
+                <div class="box-head">Gerenciar anúncios</div>
+
+                <div class="box-body" id="adminProducts">
+                    ${anunciosHTML || 'Nenhum anúncio.'}
+                </div>
+            </div>
+
+            <div class="box" style="margin-top:20px">
+                <div class="box-head">Usuários cadastrados</div>
+
+                <div class="box-body" id="adminUsers">
+                    ${usuariosHTML}
+                </div>
+            </div>
+
+            <div class="box" style="margin-top:20px">
+                <div class="box-head">Pedidos demonstrativos</div>
+
+                <div class="box-body">
+                    ${tabelaPedidos(pedidos, true)}
+                </div>
+            </div>
+        `;
+    };
+
+    // CANCELAMENTO DE PEDIDO DEMONSTRATIVO
+
+    document.addEventListener('click', evento => {
+        const botao = evento.target.closest('[data-bhx-cancelar]');
+
+        if (!botao) return;
+
+        const conta = currentAccount();
+
+        if (!conta) return;
+
+        try {
+            const pedidos = lerPedidos();
+
+            const pedido = pedidos.find(pedido =>
+                pedido.id === botao.dataset.bhxCancelar
+            );
+
+            if (
+                !pedido ||
+                (
+                    !isAdmin() &&
+                    pedido.comprador !== conta.email.toLowerCase()
+                )
+            ) {
+                return;
+            }
+
+            if (!confirm(
+                'Cancelar esta simulação? ' +
+                'Nenhum pagamento real será alterado.'
+            )) {
+                return;
+            }
+
+            pedido.status = 'CANCELADO';
+
+            localStorage.setItem(
+                ORDER_KEY,
+                JSON.stringify(pedidos)
+            );
+
+            mostrarPedidos();
+
+            if (isAdmin()) {
+                renderAdmin();
+            }
+
+        } catch (erro) {
+            alert('Não foi possível salvar a alteração.');
+        }
+    });
+
+    // CONTROLE DE ACESSO ÀS TELAS
+
+    const paginaAnterior = showPage;
+
+    showPage = function (id, elemento) {
+        if (id === 'admin' && !isAdmin()) {
+            alert('Área disponível somente para administradores.');
+            return;
+        }
+
+        if (id === 'bhxCheckout' && !currentAccount()) {
+            showAuthScreen();
+            return;
+        }
+
+        paginaAnterior(id, elemento);
+
+        if (id === 'bhxPedidos') {
+            mostrarPedidos();
+        }
+    };
+
+    // SOMENTE O DONO OU O ADMIN PODE ALTERAR O ANÚNCIO
+
+    const modalAnterior = openModal;
+
+    openModal = function (nome) {
+        const conta = currentAccount();
+
+        const produto = nome
+            ? products.find(produto => produto.name === nome)
+            : null;
+
+        if (!conta || (produto && !podeEditar(produto))) {
+            alert(
+                'Entre como proprietário do anúncio ou administrador.'
+            );
+
+            return;
+        }
+
+        return modalAnterior(nome);
+    };
+
+    const publicarAnterior = publishProduct;
+
+    publishProduct = async function () {
+        const produto = editingProductName
+            ? products.find(produto =>
+                produto.name === editingProductName
+            )
+            : null;
+
+        if (
+            !currentAccount() ||
+            (produto && !podeEditar(produto))
+        ) {
+            alert('Você não tem permissão para alterar este anúncio.');
+            return;
+        }
+
+        await publicarAnterior();
+
+        if (isAdmin()) {
+            renderAdmin();
+        }
+    };
+
+    const excluirAnterior = deleteProductById;
+
+    deleteProductById = function (id) {
+        const produto = productById(id);
+
+        if (!produto || !podeEditar(produto)) {
+            alert('Você não tem permissão para excluir este anúncio.');
+            return;
+        }
+
+        excluirAnterior(id);
+    };
+
+    // ATUALIZA A INTERFACE AO ENTRAR OU SAIR
+
+    const entrarAnterior = enterApplication;
+
+    enterApplication = function (conta) {
+        entrarAnterior(conta);
+
+        Object.assign(profile, {
+            name: conta.name,
+            username: conta.username,
+            email: conta.email,
+            location: conta.location || '',
+            bio: conta.bio || '',
+            photo: conta.photo || '',
+            memberSince: conta.memberSince || '2026'
+        });
+
+        updateProfileInterface();
+        renderProfile();
+        updateAdminAccess();
+
+        showPage('home');
+
+        checkout = null;
+    };
+
+    const visitanteAnterior = enterAsGuest;
+
+    enterAsGuest = function () {
+        localStorage.removeItem('bytehuntCurrentUser');
+
+        visitanteAnterior();
+
+        updateAdminAccess();
+        showPage('home');
+
+        checkout = null;
+    };
+
+    const sairAnterior = logout;
+
+    logout = function () {
+        checkout = null;
+        sairAnterior();
+    };
+
+    // PRESERVA O CATÁLOGO MESMO QUANDO TODOS OS ANÚNCIOS FOREM EXCLUÍDOS
+
+    restoreProducts = async function () {
+        try {
+            const db = await mediaDb();
+
+            const registro = await new Promise((resolve, reject) => {
+                const requisicao = db
+                    .transaction('products', 'readonly')
+                    .objectStore('products')
+                    .get('all');
+
+                requisicao.onsuccess = () =>
+                    resolve(requisicao.result);
+
+                requisicao.onerror = () =>
+                    reject(requisicao.error);
+            });
+
+            db.close();
+
+            if (registro && Array.isArray(registro.items)) {
+                products = registro.items;
+            }
+
+        } catch (erro) {
+            try {
+                const salvos = JSON.parse(
+                    localStorage.getItem('bytehuntProducts') || 'null'
+                );
+
+                if (Array.isArray(salvos)) {
+                    products = salvos;
+                }
+
+            } catch (_) {
+                // Mantém os produtos atuais se não houver dados salvos.
+            }
+        }
+
+        products.forEach(produto => {
+            if (!produto.id) {
+                produto.id =
+                    'p' +
+                    Date.now().toString(36) +
+                    Math.random().toString(36).slice(2, 8);
+            }
+        });
+    };
+
+    updateAdminAccess();
+})();
+</script>
+
+<!-- VISUAL GAMER PIXEL DA BYTEHUNT -->
+
+<style id="bytehuntPixelTheme">
+    :root {
+        --azul: #102746;
+        --azul-hover: #1c3d69;
+        --laranja: #e85b16;
+        --laranja-hover: #c8460d;
+        --fundo: #edf2f8;
+        --card: #ffffff;
+        --borda: #cfdaea;
+        --borda-forte: #9caec5;
+        --texto: #172b47;
+        --texto-2: #53677f;
+        --texto-3: #60738b;
+        --pixel: 'Press Start 2P', 'Courier New', monospace;
+    }
+
+    html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 135px;
+    }
+
+    body {
+        background-color: var(--fundo);
+
+        background-image:
+            linear-gradient(#10274606 1px, transparent 1px),
+            linear-gradient(90deg, #10274606 1px, transparent 1px);
+
+        background-size: 24px 24px;
+        font-size: 14px;
+    }
+
+    button,
+    a,
+    input,
+    select,
+    textarea {
+        touch-action: manipulation;
+    }
+
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+        outline: 3px solid #df570e;
+        outline-offset: 4px;
+    }
+
+    /* ORGANIZAÇÃO DA PÁGINA */
+
+    #app .layout {
+        max-width: 1330px;
+        grid-template-columns: minmax(0, 1fr) 260px;
+        gap: 24px;
+        margin: 30px auto;
+        padding: 0 24px;
+    }
+
+    #app main {
+        min-width: 0;
+    }
+
+    /* MENU SUPERIOR */
+
+    .topbar {
+        height: auto;
+        min-height: 76px;
+        padding: 14px 24px;
+        flex-wrap: wrap;
+        gap: 14px;
+        background: #102746;
+        border-bottom: 4px solid #ff8739;
+        box-shadow: 0 5px 0 #10274615;
+    }
+
+    .topbar-logo {
+        font-family: var(--pixel);
+        font-size: 16px;
+        line-height: 1.8;
+        text-shadow: 2px 2px #0007;
+    }
+
+    .topbar-logo span {
+        font-family: inherit;
+        color: #ffa264;
+    }
+
+    .topbar-nav {
+        gap: 5px;
+        margin-left: 0;
+        flex-wrap: wrap;
+    }
+
+    .topbar-nav .topbar-link {
+        padding: 9px 11px;
+        border: 1px solid transparent;
+        border-radius: 0;
+        color: #d9e7ff;
+        transition: background 0.15s, border-color 0.15s;
+    }
+
+    .topbar-nav .topbar-link:hover {
+        border-color: #6d8aae;
+        background: #ffffff10;
+    }
+
+    .topbar-nav .topbar-link.active {
+        color: white;
+        background: #24466d;
+        border-bottom: 3px solid #ff944d;
+    }
+
+    .topbar-search {
+        height: 38px;
+        min-width: 180px;
+        margin-left: 0;
+    }
+
+    .topbar-search input {
+        border: 2px solid #778da7;
+        border-radius: 0;
+    }
+
+    .topbar-search button {
+        border-radius: 0;
+        background: #e85b16;
+        padding: 0 14px;
+    }
+
+    .topbar-actions {
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .topbar-link.primary,
+    .logout-button {
+        border-radius: 0;
+        border: 2px solid #ffffff35;
+    }
+
+    .topbar-avatar {
+        border-radius: 2px;
+        border: 2px solid #9db7d7;
+    }
+
+    .sidebar-right {
+        top: 150px;
+        gap: 20px;
+    }
+
+    /* ENTRADA DAS TELAS */
+
+    .page.active {
+        animation: bhp-page 0.3s ease-out both;
+    }
+
+    .page-title,
+    .home-section-head h2 {
+        font-family: var(--pixel);
+        font-size: clamp(12px, 1.3vw, 17px);
+        line-height: 1.9;
+        color: #102746;
+        margin-bottom: 22px;
+    }
+
+    .page-title::before,
+    .home-section-head h2::before {
+        content: '▸ ';
+        color: #cc4c0b;
+    }
+
+    /* BANNER PRINCIPAL */
+
+    .home-banner {
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+        min-height: 260px;
+        background: linear-gradient(120deg, #102746, #1b406e);
+        border: 3px solid #102746;
+        border-radius: 0;
+        padding: 36px;
+        box-shadow: 7px 7px 0 #d8e0eb;
+        margin-bottom: 36px;
+    }
+
+    .home-banner::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+
+        background-image:
+            linear-gradient(#ffffff08 1px, transparent 1px),
+            linear-gradient(90deg, #ffffff08 1px, transparent 1px);
+
+        background-size: 20px 20px;
+    }
+
+    .home-banner::after {
+        content: '+ + +';
+        position: absolute;
+        right: 20px;
+        top: 14px;
+        color: #92b8e1;
+        letter-spacing: 7px;
+        font-family: var(--pixel);
+        font-size: 12px;
+        pointer-events: none;
+    }
+
+    .banner-tag {
+        background: #ff9b51;
+        color: #102746;
+        font-family: var(--pixel);
+        font-size: 8px;
+        line-height: 1.8;
+        border-radius: 0;
+        padding: 8px 10px;
+    }
+
+    .banner-title {
+        color: white;
+        font-family: var(--pixel);
+        font-size: clamp(18px, 2.8vw, 32px);
+        line-height: 1.6;
+        text-shadow: 3px 3px #0005;
+        margin-top: 16px;
+    }
+
+    .banner-desc {
+        color: #d4e4f8;
+        font-size: 14px;
+        line-height: 1.8;
+    }
+
+    .banner-icon {
+        border: 3px solid #668ab6;
+        border-radius: 0;
+        background: #ffffff0a;
+        color: #a9cdf5;
+        box-shadow: 7px 7px #071a33;
+        font-family: var(--pixel);
+        font-size: 25px;
+        animation: bhp-float 5s steps(5, end) infinite;
+    }
+
+    .home-section-head {
+        margin-bottom: 20px;
+    }
+
+    /* CARTÕES DOS PRODUTOS */
+
+    .cards-grid {
+        gap: 22px;
+    }
+
+    .product-card {
+        border: 2px solid #b9c8dc;
+        border-radius: 0;
+        background: white;
+        overflow: hidden;
+        box-shadow: 4px 4px 0 #d9e2ed;
+
+        transition:
+            transform 0.18s,
+            box-shadow 0.18s,
+            border-color 0.18s;
+
+        animation: bhp-card 0.35s ease-out backwards;
+    }
+
+    .product-card:nth-child(3n + 2) {
+        animation-delay: 0.04s;
+    }
+
+    .product-card:nth-child(3n + 3) {
+        animation-delay: 0.08s;
+    }
+
+    .product-card:hover {
+        transform: translate(-2px, -3px);
+        border-color: #d55517;
+        box-shadow: 7px 8px 0 #d3dce8;
+    }
+
+    .product-card-img {
+        background-color: #e4edf8;
+        border-bottom: 2px solid #cfdaea;
+        min-height: 150px;
+        color: #173b65;
+        font-family: var(--pixel);
+        text-shadow: 2px 2px white;
+    }
+
+    .product-card-img img {
+        transition: transform 0.25s;
+    }
+
+    .product-card:hover .product-card-img img {
+        transform: scale(1.035);
+    }
+
+    .product-card-body {
+        padding: 18px;
+    }
+
+    .product-card-cat {
+        display: inline-block;
+        padding: 4px 7px;
+        background: #edf3fc;
+        color: #315779;
+        font-family: var(--pixel);
+        font-size: 8px;
+        line-height: 1.8;
+    }
+
+    .product-card-name {
+        font-size: 16px;
+        color: #16324f;
+        line-height: 1.5;
+        margin: 12px 0;
+    }
+
+    .product-card-price {
+        color: #b43e08;
+        font-size: 21px;
+        margin: 12px 0 18px;
+    }
+
+    /* BOTÕES COM EFEITO DE JOGO */
+
+    .btn,
+    .back,
+    .bhx-metodo {
+        border-radius: 0;
+        border-width: 2px;
+        min-height: 38px;
+
+        transition:
+            transform 0.12s,
+            box-shadow 0.12s,
+            background 0.12s;
+    }
+
+    .btn:not(:disabled):hover,
+    .back:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 3px 0 #10274625;
+        text-decoration: none;
+    }
+
+    .btn:not(:disabled):active,
+    .back:active {
+        transform: translateY(1px);
+        box-shadow: none;
+    }
+
+    .btn-primary {
+        border-color: #b33c08;
+        box-shadow: 0 3px 0 #b33c08;
+    }
+
+    .btn-primary:hover {
+        box-shadow: 0 4px 0 #a93606;
+    }
+
+    .btn-secondary {
+        border-color: #081a30;
+        box-shadow: 0 3px 0 #081a30;
+    }
+
+    .btn-outline {
+        background: white;
+        border-color: #59799e;
+        color: #183b63;
+    }
+
+    .btn-outline:hover,
+    .btn-outline.active {
+        background: #173b65;
+        border-color: #173b65;
+        color: white;
+    }
+
+    .btn:disabled {
+        cursor: wait;
+        opacity: 0.65;
+    }
+
+    /* PAINÉIS, PERFIL E AVALIAÇÕES */
+
+    .box,
+    .detail,
+    .profile-header,
+    .review-card,
+    .bhx-card,
+    .report-card {
+        border: 2px solid #c6d3e4;
+        border-radius: 0;
+        background: white;
+        box-shadow: 4px 4px 0 #dce4ef;
+    }
+
+    .box-head {
+        padding: 13px 15px;
+        font-family: var(--pixel);
+        font-size: 8px;
+        line-height: 1.8;
+        color: #24466c;
+        background: #eaf0f8;
+        border-bottom: 2px solid #d1dcea;
+    }
+
+    .box-body {
+        padding: 16px;
+    }
+
+    .stat-row {
+        padding: 9px 0;
+    }
+
+    .rank-num {
+        color: #b5450e;
+    }
+
+    .detail {
+        padding: 26px;
+    }
+
+    .detail-img,
+    .bh-gallery,
+    .bh-slide,
+    .media-preview-item {
+        border-radius: 0;
+    }
+
+    .detail-price {
+        color: #b43e08;
+        font-size: 29px;
+    }
+
+    .detail-name,
+    .detail-info h1 {
+        color: #102746;
+        line-height: 1.4;
+    }
+
+    .detail-actions {
+        gap: 12px;
+    }
+
+    .report-section {
+        margin-top: 30px;
+        padding-top: 24px;
+        border-top: 2px dashed #d0dbea;
+    }
+
+    .report-section h2 {
+        color: #183a61;
+        font-size: 17px;
+        margin-bottom: 18px;
+    }
+
+    .report-card h3 {
+        color: #1f496f;
+    }
+
+    .bh-nav {
+        border-radius: 0;
+        border: 2px solid #ffffff85;
+    }
+
+    .bh-dot {
+        border-radius: 0;
+    }
+
+    .tabs {
+        padding: 5px;
+        border: 2px solid #c6d3e4;
+        border-radius: 0;
+        gap: 5px;
+    }
+
+    .tab {
+        border-radius: 0;
+        padding: 9px 15px;
+    }
+
+    .tab.active {
+        background: #173b65;
+    }
+
+    input:not([type=checkbox]):not([type=radio]),
+    select,
+    textarea {
+        border-radius: 0 !important;
+    }
+
+    /* PAGAMENTO E ADMINISTRAÇÃO */
+
+    .bhx-card {
+        padding: 25px;
+    }
+
+    .bhx-card h2 {
+        font-family: var(--pixel);
+        font-size: 11px;
+        line-height: 1.9;
+    }
+
+    .bhx-aviso {
+        border-radius: 0;
+        border: 2px solid #edcfb8;
+        background: #fff6eb;
+        color: #714312;
+    }
+
+    .bhx-metodo {
+        border: 2px solid #c1cee0;
+        color: #173b65;
+    }
+
+    .bhx-metodo.active {
+        border-color: #bf4c10;
+        background: #fff0e2;
+        box-shadow: 0 3px #bf4c10;
+    }
+
+    .bhx-total {
+        color: #183b63;
+    }
+
+    .bhx-stats .bhx-card {
+        border-left: 5px solid #d45a1d;
+    }
+
+    .bhx-stats strong {
+        font-family: var(--pixel);
+        font-size: 21px;
+        line-height: 1.8;
+    }
+
+    .bhx-tabela th {
+        color: #173b65;
+        background: #eef3fa;
+    }
+
+    .bhx-tabela tbody tr:hover {
+        background: #f7faff;
+    }
+
+    .bhx-tabela .btn {
+        font-size: 12px;
+        margin-top: 8px;
+    }
+
+    /* JANELAS */
+
+    .modal {
+        backdrop-filter: blur(3px);
+        background: #07172db3;
+    }
+
+    .modal.active .modal-box {
+        animation: bhp-page 0.22s ease-out both;
+    }
+
+    .modal-box,
+    #productModal .modal-box {
+        border-radius: 0;
+        border: 3px solid #173b65;
+        box-shadow: 8px 8px 0 #0004;
+    }
+
+    .modal-head,
+    #productModal .modal-head {
+        border-radius: 0;
+    }
+
+    /* LOGIN EM PIXEL ART */
+
+    #authScreen {
+        background-color: #07152a;
+
+        background-image:
+            radial-gradient(
+                ellipse at top,
+                #1a3a65 0,
+                transparent 65%
+            ),
+            linear-gradient(#ffffff04 1px, transparent 1px),
+            linear-gradient(90deg, #ffffff04 1px, transparent 1px);
+
+        background-size: auto, 32px 32px, 32px 32px;
+    }
+
+    .pixel-screen {
+        border: 4px solid #dae9ff;
+        box-shadow:
+            0 0 0 5px #d96a27,
+            12px 12px 0 #030c1c;
+        background: #0a1f3c;
+        padding-bottom: 70px;
+    }
+
+    .pixel-screen::before {
+        border-color: #6383ad55;
+    }
+
+    .pixel-screen::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+
+        background: repeating-linear-gradient(
+            transparent 0 3px,
+            #0000000a 3px 4px
+        );
+    }
+
+    .pixel-logo {
+        text-shadow:
+            4px 4px #030c1c,
+            -1px -1px #6985a4;
+    }
+
+    .pixel-logo span {
+        color: #ffa264;
+    }
+
+    .pixel-title {
+        color: #ecf4ff;
+    }
+
+    .pixel-subtitle {
+        color: #b6cce5;
+    }
+
+    .pixel-btn {
+        border-width: 3px;
+        box-shadow: 5px 5px #020a17;
+        line-height: 1.7;
+    }
+
+    .pixel-btn:hover {
+        transform: translate(2px, 2px);
+        box-shadow: 3px 3px #020a17;
+    }
+
+    .auth-field input {
+        border-radius: 0;
+        border: 3px solid #7691b2;
+    }
+
+    .auth-field input:focus {
+        border-color: #ffad71;
+        box-shadow: 3px 3px #020a17;
+    }
+
+    .pixel-footer {
+        color: #a7bdd8;
+        bottom: 20px;
+    }
+
+    /* BOTÃO VOLTAR AO TOPO */
+
+    .bhp-top {
+        position: fixed;
+        right: 22px;
+        bottom: 22px;
+        width: 44px;
+        height: 44px;
+        z-index: 1000;
+        background: #16395f;
+        color: white;
+        border: 2px solid #a5bfdf;
+        box-shadow: 3px 3px #10274644;
+        font: 21px monospace;
+        cursor: pointer;
+    }
+
+    .bhp-top[hidden] {
+        display: none !important;
+    }
+
+    /* PIXELS QUE APARECEM AO CLICAR */
+
+    .bhp-spark {
+        position: fixed;
+        width: 6px;
+        height: 6px;
+        background: #da691c;
+        pointer-events: none;
+        z-index: 100001;
+        animation: bhp-spark 0.42s steps(6, end) forwards;
+    }
+
+    /* ANIMAÇÕES */
+
+    @keyframes bhp-page {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes bhp-card {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes bhp-float {
+        0%, 100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-6px);
+        }
+    }
+
+    @keyframes bhp-spark {
+        to {
+            opacity: 0;
+            transform: translate(var(--dx), var(--dy));
+        }
+    }
+
+    /* ADAPTAÇÃO PARA CELULAR */
+
+    @media (hover: none) {
+        .product-card:hover,
+        .btn:not(:disabled):hover {
+            transform: none;
+        }
+    }
+
+    @media (max-width: 1100px) {
+        #app .layout {
+            grid-template-columns: minmax(0, 1fr) 230px;
+            gap: 18px;
+        }
+
+        .topbar-nav {
+            order: 3;
+            width: 100%;
+        }
+
+        .topbar-search {
+            margin-left: auto;
+        }
+    }
+
+    @media (max-width: 800px) {
+        #app .layout {
+            grid-template-columns: minmax(0, 1fr);
+            margin-top: 22px;
+            padding: 0 16px;
+        }
+
+        .topbar {
+            padding: 12px 16px;
+        }
+
+        .topbar-nav {
+            display: flex !important;
+            width: 100%;
+            order: 4;
+            gap: 4px;
+        }
+
+        .topbar-nav .topbar-link {
+            padding: 8px;
+            font-size: 11px;
+        }
+
+        .topbar-search {
+            order: 3;
+            max-width: none;
+            width: 100%;
+            flex-basis: 100%;
+            margin: 0;
+        }
+
+        .sidebar-right {
+            position: static;
+        }
+
+        .home-banner {
+            padding: 24px;
+            min-height: 240px;
+        }
+
+        .banner-icon {
+            font-size: 18px;
+        }
+
+        .topbar-actions {
+            margin-left: auto;
+        }
+    }
+
+    @media (max-width: 520px) {
+        .topbar-logo {
+            font-size: 12px;
+        }
+
+        .topbar-actions {
+            gap: 6px;
+        }
+
+        .topbar-user span {
+            display: none;
+        }
+
+        .cards-grid {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 20px;
+        }
+
+        .home-banner {
+            padding: 22px 18px;
+        }
+
+        .banner-icon {
+            display: none;
+        }
+
+        .banner-title {
+            font-size: 19px;
+        }
+
+        .banner-tag {
+            font-size: 7px;
+        }
+
+        .pixel-screen {
+            min-height: 620px;
+            padding: 28px 18px 70px;
+        }
+
+        .pixel-logo {
+            font-size: 27px;
+        }
+
+        .pixel-btn {
+            font-size: 9px;
+        }
+
+        .detail {
+            padding: 17px;
+        }
+
+        .detail-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .bhp-top {
+            right: 14px;
+            bottom: 14px;
+        }
+    }
+
+    /* RESPEITA A PREFERÊNCIA POR MENOS MOVIMENTO */
+
+    @media (prefers-reduced-motion: reduce) {
+        html {
+            scroll-behavior: auto !important;
+        }
+
+        *,
+        *::before,
+        *::after {
+            animation: none !important;
+            transition: none !important;
+            scroll-behavior: auto !important;
+        }
+
+        .bhp-spark {
+            display: none !important;
+        }
+    }
+</style>
+
+<script>
+(function () {
+    if (document.getElementById('bhpTopButton')) {
+        return;
+    }
+
+    // BOTÃO PARA VOLTAR AO TOPO
+
+    const topo = document.createElement('button');
+
+    topo.id = 'bhpTopButton';
+    topo.className = 'bhp-top';
+    topo.type = 'button';
+    topo.textContent = '↑';
+    topo.hidden = true;
+
+    topo.setAttribute('aria-label', 'Voltar ao topo');
+
+    topo.onclick = function () {
+        const reduzir = window.matchMedia(
+            '(prefers-reduced-motion: reduce)'
+        ).matches;
+
+        window.scrollTo({
+            top: 0,
+            behavior: reduzir ? 'auto' : 'smooth'
+        });
+    };
+
+    document.body.appendChild(topo);
+
+    function atualizarTopo() {
+        topo.hidden = window.scrollY < 400;
+    }
+
+    window.addEventListener(
+        'scroll',
+        atualizarTopo,
+        { passive: true }
+    );
+
+    atualizarTopo();
+
+    // EFEITO DE PIXELS NOS BOTÕES
+
+    document.addEventListener('click', function (evento) {
+        const botao = evento.target.closest(
+            'button, .btn, .pixel-btn'
+        );
+
+        const reduzir = window.matchMedia(
+            '(prefers-reduced-motion: reduce)'
+        ).matches;
+
+        if (
+            !botao ||
+            botao.disabled ||
+            evento.detail === 0 ||
+            reduzir
+        ) {
+            return;
+        }
+
+        for (let i = 0; i < 4; i++) {
+            const pixel = document.createElement('span');
+
+            pixel.className = 'bhp-spark';
+            pixel.setAttribute('aria-hidden', 'true');
+
+            pixel.style.left = evento.clientX + 'px';
+            pixel.style.top = evento.clientY + 'px';
+
+            const direcao = i % 2 ? 1 : -1;
+
+            pixel.style.setProperty(
+                '--dx',
+                direcao * (12 + i * 4) + 'px'
+            );
+
+            pixel.style.setProperty(
+                '--dy',
+                -18 - (i % 3) * 9 + 'px'
+            );
+
+            document.body.appendChild(pixel);
+
+            window.setTimeout(function () {
+                pixel.remove();
+            }, 450);
+        }
+    });
+
+    // NAVEGAÇÃO DO MENU PELO TECLADO
+
+    document.querySelectorAll(
+        '.topbar a[onclick]:not([href])'
+    ).forEach(function (link) {
+        link.setAttribute('role', 'button');
+        link.tabIndex = 0;
+
+        link.addEventListener('keydown', function (evento) {
+            if (
+                evento.key === 'Enter' ||
+                evento.key === ' '
+            ) {
+                evento.preventDefault();
+                link.click();
+            }
+        });
+    });
+})();
+</script>
+
+<!-- BYTEHUNT — ACABAMENTO PROFISSIONAL COM ESTILO PIXEL -->
+
+<style id="bytehuntProTheme">
+    :root {
+        --fundo: #f1f4f8;
+        --texto: #152b46;
+        --texto-2: #52657d;
+        --texto-3: #61728a;
+        --borda: #d6dfeb;
+        --pro-sombra: 3px 3px 0 #dce4ef;
+    }
+
+    body {
+        line-height: 1.65;
+        background-size: 32px 32px;
+    }
+
+    html {
+        scroll-padding-top: 170px;
+    }
+
+    /* ESTRUTURA */
+
+    #app .layout {
+        max-width: 1400px;
+        margin: 32px auto 50px;
+        gap: 28px;
+        padding: 0 30px;
+        grid-template-columns: minmax(0, 1fr) 250px;
+    }
+
+    /* CABEÇALHO */
+
+    .topbar {
+        min-height: 78px;
+        border-bottom-width: 3px;
+        background: #10243d;
+        padding: 14px 28px;
+        gap: 16px;
+        box-shadow: 0 4px 18px #10243d12;
+    }
+
+    .topbar-logo {
+        font-size: 15px;
+        letter-spacing: -0.6px;
+    }
+
+    .topbar-search {
+        height: 40px;
+        max-width: 300px;
+    }
+
+    .topbar-search input {
+        border-color: #92a4bb;
+        background: #f7faff;
+        font-size: 13px;
+    }
+
+    .topbar-nav .topbar-link {
+        font-size: 12px;
+        padding: 9px 10px;
+    }
+
+    .topbar-nav .topbar-link.active {
+        background: #243b57;
+        border-bottom-color: #ff9e5f;
+    }
+
+    .topbar-user {
+        padding: 5px 9px;
+        border: 1px solid #ffffff15;
+        border-radius: 0;
+    }
+
+    .topbar-user span {
+        max-width: 95px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .sidebar-right {
+        top: 165px;
+        gap: 22px;
+    }
+
+    /* TÍTULOS E TRANSIÇÕES */
+
+    .page.active {
+        animation: bhpro-enter 0.24s ease-out backwards;
+    }
+
+    .page-title,
+    .home-section-head h2 {
+        font-size: clamp(11px, 1.15vw, 15px);
+        line-height: 1.9;
+        letter-spacing: -0.2px;
+    }
+
+    /* DESTAQUE PRINCIPAL */
+
+    .home-banner {
+        min-height: 300px;
+        padding: 38px;
+        margin-bottom: 22px;
+        border-width: 2px;
+        box-shadow: 5px 5px 0 #d7e0ed;
+        background: linear-gradient(
+            115deg,
+            #10243d 0%,
+            #193f6b 100%
+        );
+        gap: 30px;
+    }
+
+    .home-banner::before {
+        opacity: 0.65;
+    }
+
+    .home-banner::after {
+        inset: auto;
+        right: 18px;
+        top: 18px;
+        font-size: 9px;
+        color: #8eaccd;
+        letter-spacing: 5px;
+        background: none;
+    }
+
+    .banner-content {
+        max-width: 580px;
+    }
+
+    .banner-tag {
+        color: #f6c199;
+        background: #ffffff0b;
+        border: 1px solid #d9a17460;
+        padding: 7px 10px;
+        font-size: 7px;
+        letter-spacing: 0.6px;
+        margin-bottom: 15px;
+    }
+
+    .banner-title {
+        font-size: clamp(19px, 2.4vw, 30px);
+        margin: 0 0 14px;
+        line-height: 1.65;
+        text-shadow: 3px 3px #07132780;
+    }
+
+    .banner-desc {
+        max-width: 470px;
+        line-height: 1.85;
+        margin-bottom: 23px;
+        color: #d6e4f4;
+        font-size: 14px;
+    }
+
+    .home-banner .btn {
+        padding: 11px 19px;
+        min-height: 44px;
+    }
+
+    .banner-icon {
+        opacity: 1;
+        width: 165px;
+        height: 145px;
+        display: grid;
+        place-items: center;
+        border: 8px double #7a99bc;
+        background: #0e2746;
+        color: #b9d5f4;
+        font-size: 21px;
+        box-shadow:
+            6px 6px 0 #08172b,
+            0 0 0 1px #a4c2e640;
+        flex-shrink: 0;
+    }
+
+    .banner-icon img {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        object-fit: contain;
+        background: white;
+    }
+
+    /* RESUMO DO CATÁLOGO */
+
+    .bhpro-intro {
+        margin-bottom: 22px;
+        color: #586d85;
+        font-size: 13px;
+    }
+
+    .bhpro-dashboard {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        border: 2px solid #ced9e8;
+        background: white;
+        box-shadow: var(--pro-sombra);
+        margin: 25px 0;
+    }
+
+    .bhpro-metrica {
+        padding: 17px 20px;
+        border-right: 1px solid #dce4ef;
+    }
+
+    .bhpro-metrica:last-child {
+        border-right: 0;
+    }
+
+    .bhpro-metrica strong {
+        display: block;
+        font-family: var(--pixel);
+        font-size: 17px;
+        line-height: 1.8;
+        color: #173b63;
+        margin-bottom: 3px;
+    }
+
+    .bhpro-metrica span {
+        color: #5a6c82;
+        font-size: 12px;
+    }
+
+    /* CATEGORIAS RÁPIDAS */
+
+    .bhpro-categorias {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+        margin-bottom: 34px;
+    }
+
+    .bhpro-categoria {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 12px;
+        background: white;
+        color: #284562;
+        border: 1px solid #b8c9dc;
+        box-shadow: 0 2px #dce4ef;
+        border-radius: 0;
+        font-size: 12px;
+
+        transition:
+            border-color 0.15s,
+            background 0.15s,
+            transform 0.15s;
+    }
+
+    .bhpro-categoria span {
+        font-family: var(--pixel);
+        font-size: 7px;
+        color: #a6400e;
+    }
+
+    .bhpro-categoria:hover {
+        background: #fff8f1;
+        border-color: #bc602f;
+        transform: translateY(-2px);
+    }
+
+    /* CARTÕES */
+
+    .home-section-head {
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+
+    .home-section-head h2 {
+        margin-bottom: 0;
+    }
+
+    .cards-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 22px;
+    }
+
+    .product-card {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        border-color: #c5d2e2;
+        box-shadow: var(--pro-sombra);
+    }
+
+    .product-card:hover {
+        transform: translateY(-3px);
+        border-color: #b66b43;
+        box-shadow: 4px 7px 0 #d9e2ed;
+    }
+
+    .product-card-img {
+        height: 185px;
+        min-height: 185px;
+        background: linear-gradient(
+            135deg,
+            #e7eef8,
+            #f4f7fc
+        );
+        border-bottom: 1px solid #d4dfec;
+        font-size: 30px;
+    }
+
+    .product-card-body {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        padding: 19px;
+    }
+
+    .product-card-cat {
+        align-self: flex-start;
+        padding: 4px 7px;
+        font-size: 7px;
+        background: #eef3f9;
+        color: #4b627b;
+        border: 1px solid #dbe4f0;
+    }
+
+    .product-card-name {
+        font-size: 15px;
+        line-height: 1.6;
+        margin: 13px 0 8px;
+        font-weight: 700;
+        overflow-wrap: anywhere;
+    }
+
+    .product-card-price {
+        margin: auto 0 17px;
+        padding-top: 10px;
+        font-size: 23px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        color: #a53b0d;
+    }
+
+    .product-card .btn {
+        font-size: 12px;
+        min-height: 40px;
+    }
+
+    /* PAINÉIS LATERAIS */
+
+    .box {
+        border-color: #ccd8e7;
+        box-shadow: 2px 2px #dce4ef;
+    }
+
+    .box-head {
+        background: #f7f9fc;
+        border-bottom: 1px solid #dae3ef;
+        font-size: 7px;
+        padding: 15px;
+        letter-spacing: 0.1px;
+    }
+
+    .box-body {
+        padding: 17px;
+    }
+
+    .stat-row {
+        font-size: 12px;
+        gap: 10px;
+    }
+
+    .rank-item {
+        padding: 11px 0;
+    }
+
+    .rank-info strong {
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    /* DETALHES DA PEÇA */
+
+    .detail {
+        padding: 28px;
+        box-shadow: var(--pro-sombra);
+    }
+
+    .detail-grid {
+        gap: 30px;
+    }
+
+    .detail-info h1 {
+        font-family: Arial, sans-serif;
+        font-size: clamp(23px, 2.5vw, 32px);
+        letter-spacing: -0.6px;
+        line-height: 1.4;
+        margin: 10px 0;
+    }
+
+    .detail-price {
+        font-size: 30px;
+        font-weight: 800;
+        margin: 18px 0;
+    }
+
+    .detail-desc {
+        font-size: 14px;
+        line-height: 1.9;
+        color: #53677f;
+    }
+
+    .seller {
+        background: #f3f7fc;
+        border: 1px solid #d6e1ee;
+        padding: 14px;
+        margin: 22px 0;
+        border-radius: 0;
+    }
+
+    .detail-actions .btn {
+        padding: 12px 16px;
+    }
+
+    .report-card {
+        box-shadow: none;
+        background: #fbfcfe;
+    }
+
+    .report-card h3 {
+        font-size: 13px;
+        margin-bottom: 10px;
+    }
+
+    .report-card p {
+        font-size: 13px;
+        line-height: 1.85;
+    }
+
+    /* PERFIL, AVALIAÇÕES E FILTROS */
+
+    .profile-header-box {
+        border: 2px solid #cad7e7;
+        border-radius: 0;
+        box-shadow: var(--pro-sombra);
+    }
+
+    .review-card {
+        padding: 22px;
+        box-shadow: 2px 2px #dce4ef;
+    }
+
+    .review-text {
+        line-height: 1.85;
+        color: #455d78;
+    }
+
+    .explore-head {
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .tabs {
+        flex-wrap: wrap;
+        padding: 5px;
+    }
+
+    .tab {
+        min-height: 35px;
+    }
+
+    .empty {
+        background: white;
+        border: 2px dashed #c4d3e5;
+        border-radius: 0;
+        padding: 35px 20px;
+    }
+
+    /* PAGAMENTO E ADMINISTRAÇÃO */
+
+    .bhx-layout {
+        gap: 22px;
+    }
+
+    .bhx-card {
+        box-shadow: var(--pro-sombra);
+        padding: 27px;
+    }
+
+    .bhx-card p {
+        line-height: 1.75;
+    }
+
+    .bhx-aviso {
+        font-size: 13px;
+        line-height: 1.8;
+        border-width: 1px;
+        border-left-width: 4px;
+    }
+
+    .bhx-metodo {
+        padding: 16px 10px;
+        font-size: 14px;
+    }
+
+    .bhx-linha {
+        font-size: 13px;
+        padding: 6px 0;
+    }
+
+    .bhx-total {
+        font-size: 21px;
+        margin-top: 20px;
+        padding-top: 20px;
+    }
+
+    .bhx-status {
+        font-size: 13px;
+    }
+
+    .bhx-stats .bhx-card {
+        padding: 22px;
+    }
+
+    .bhx-tabela th {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        padding: 14px;
+    }
+
+    .bhx-tabela td {
+        padding: 15px 14px;
+        line-height: 1.8;
+    }
+
+    .bhx-tabela strong {
+        font-weight: 700;
+        color: #163957;
+    }
+
+    .bhx-acoes .btn {
+        min-height: 34px;
+        font-size: 12px;
+    }
+
+    /* JANELAS E LOGIN */
+
+    .modal-box {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .auth-field {
+        margin-bottom: 21px;
+    }
+
+    .pixel-screen {
+        max-width: 880px;
+        min-height: 640px;
+        box-shadow:
+            0 0 0 4px #d9793e,
+            10px 10px 0 #030c1c;
+    }
+
+    .pixel-screen::before {
+        inset: 16px;
+        border-width: 1px;
+    }
+
+    .pixel-subtitle {
+        max-width: 590px;
+        font-size: 8px;
+        line-height: 2.2;
+    }
+
+    .pixel-btn {
+        max-width: 365px;
+        padding: 17px 20px;
+    }
+
+    /* RODAPÉ */
+
+    .bhpro-footer {
+        max-width: 1340px;
+        margin: 10px auto 0;
+        padding: 24px 30px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 18px;
+        color: #5b7089;
+        font-size: 12px;
+        border-top: 1px solid #d3dfed;
+    }
+
+    .bhpro-footer strong {
+        font-family: var(--pixel);
+        font-size: 9px;
+        color: #173956;
+        line-height: 1.9;
+    }
+
+    @keyframes bhpro-enter {
+        from {
+            opacity: 0;
+            transform: translateY(6px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* RESPONSIVIDADE */
+
+    @media (min-width: 1101px) and (max-width: 1250px) {
+        .topbar-nav {
+            width: 100%;
+            order: 4;
+        }
+
+        .topbar-search {
+            margin-left: auto;
+        }
+    }
+
+    @media (max-width: 1100px) {
+        #app .layout {
+            grid-template-columns: minmax(0, 1fr) 225px;
+            gap: 20px;
+            padding: 0 22px;
+        }
+
+        .cards-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .banner-icon {
+            width: 125px;
+            height: 125px;
+            font-size: 17px;
+        }
+
+        .home-banner {
+            padding: 28px;
+        }
+    }
+
+    @media (max-width: 800px) {
+        #app .layout {
+            grid-template-columns: minmax(0, 1fr);
+            padding: 0 18px;
+            margin-top: 24px;
+        }
+
+        .sidebar-right {
+            position: static;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .bhpro-metrica {
+            padding: 15px;
+        }
+
+        .bhpro-metrica strong {
+            font-size: 14px;
+        }
+
+        .topbar {
+            padding: 12px 18px;
+        }
+
+        .home-banner {
+            min-height: 260px;
+        }
+    }
+
+    @media (max-width: 550px) {
+        .cards-grid,
+        .sidebar-right,
+        .bhpro-dashboard {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .bhpro-metrica {
+            border-right: 0;
+            border-bottom: 1px solid #e0e7f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .bhpro-metrica:last-child {
+            border-bottom: 0;
+        }
+
+        .bhpro-metrica strong {
+            margin-bottom: 0;
+        }
+
+        .bhpro-categorias {
+            gap: 8px;
+            margin-bottom: 27px;
+        }
+
+        .bhpro-categoria {
+            flex: 1 1 135px;
+            justify-content: center;
+        }
+
+        .home-banner {
+            padding: 28px 22px;
+            min-height: 280px;
+        }
+
+        .banner-title {
+            font-size: 21px;
+        }
+
+        .banner-icon {
+            display: none;
+        }
+
+        .detail {
+            padding: 19px;
+        }
+
+        .detail-grid {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 22px;
+        }
+
+        .bhx-card {
+            padding: 21px;
+        }
+
+        .bhpro-footer {
+            align-items: flex-start;
+            flex-direction: column;
+            padding: 24px 18px;
+        }
+
+        .pixel-screen {
+            min-height: 630px;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation: none !important;
+            transition: none !important;
+        }
+    }
+</style>
+
+<script>
+(function () {
+    if (document.getElementById('bhproDashboard')) {
+        return;
+    }
+
+    const home = document.getElementById('home');
+    const banner = home.querySelector('.home-banner');
+
+    // RESUMO DO CATÁLOGO
+
+    const painel = document.createElement('div');
+
+    painel.id = 'bhproDashboard';
+
+    painel.innerHTML = `
+        <div
+            class="bhpro-dashboard"
+            aria-label="Resumo do catálogo"
+        >
+            <div class="bhpro-metrica">
+                <strong id="bhproAnuncios">0</strong>
+                <span>Anúncios no catálogo</span>
+            </div>
+
+            <div class="bhpro-metrica">
+                <strong id="bhproCategorias">0</strong>
+                <span>Categorias disponíveis</span>
+            </div>
+
+            <div class="bhpro-metrica">
+                <strong id="bhproRelatorios">0</strong>
+                <span>Anúncios com relatório</span>
+            </div>
+        </div>
+
+        <p class="bhpro-intro">
+            Encontre a peça que falta no seu próximo upgrade.
+        </p>
+
+        <div
+            class="bhpro-categorias"
+            aria-label="Explorar por categoria"
+        ></div>
+    `;
+
+    banner.after(painel);
+
+    // BOTÕES DE CATEGORIAS
+
+    const categorias = [
+        ['TODOS', 'ALL', 'Todas as peças'],
+        ['GPU', 'GPU', 'Placas de vídeo'],
+        ['CPU', 'CPU', 'Processadores'],
+        ['RAM', 'RAM', 'Memórias'],
+        ['MB', 'MB', 'Placas-mãe'],
+        ['PSU', 'PSU', 'Fontes']
+    ];
+
+    categorias.forEach(function (categoria) {
+        const botao = document.createElement('button');
+
+        botao.className = 'bhpro-categoria';
+        botao.type = 'button';
+        botao.dataset.bhproCategoria = categoria[0];
+
+        const icone = document.createElement('span');
+
+        icone.textContent = categoria[1];
+        icone.setAttribute('aria-hidden', 'true');
+
+        botao.append(
+            icone,
+            document.createTextNode(categoria[2])
+        );
+
+        botao.onclick = function () {
+            showPage('explorar');
+
+            const nomeAba = categoria[0] === 'TODOS'
+                ? 'Todas'
+                : categoria[2];
+
+            const aba = Array.from(
+                document.querySelectorAll('#explorar .tab')
+            ).find(elemento =>
+                elemento.textContent.trim() === nomeAba
+            );
+
+            applyFilter(categoria[0], aba || null);
+
+            document.getElementById('explorar').scrollIntoView({
+                block: 'start'
+            });
+        };
+
+        painel.querySelector('.bhpro-categorias')
+            .appendChild(botao);
+    });
+
+    // RODAPÉ
+
+    const rodape = document.createElement('footer');
+
+    rodape.className = 'bhpro-footer';
+
+    rodape.innerHTML = `
+        <strong>BYTEHUNT</strong>
+        <span>Hardware usado. Novas possibilidades.</span>
+        <span>Projeto demonstrativo · 2026</span>
+    `;
+
+    document.getElementById('app').appendChild(rodape);
+
+    // ATUALIZA OS CONTADORES E A PEÇA EM DESTAQUE
+
+    function atualizarAcabamento() {
+        document.getElementById('bhproAnuncios').textContent =
+            products.length;
+
+        const categoriasDisponiveis = new Set(
+            products
+                .map(produto => produto.category)
+                .filter(Boolean)
+        );
+
+        document.getElementById('bhproCategorias').textContent =
+            categoriasDisponiveis.size;
+
+        const comRelatorio = products.filter(produto => {
+            const possuiPdf =
+                produto.reportPdf &&
+                produto.reportPdf.data;
+
+            const possuiTexto =
+                produto.report &&
+                Object.values(produto.report).some(valor =>
+                    typeof valor === 'string' && valor.trim()
+                );
+
+            return possuiPdf || possuiTexto;
+        });
+
+        document.getElementById('bhproRelatorios').textContent =
+            comRelatorio.length;
+
+        const produto = products[0];
+
+        const botao = banner.querySelector('button');
+        const arte = banner.querySelector('.banner-icon');
+
+        banner.querySelector('.banner-tag').textContent =
+            produto
+                ? 'PEÇA EM DESTAQUE'
+                : 'SEU PRÓXIMO UPGRADE';
+
+        banner.querySelector('.banner-title').textContent =
+            produto
+                ? produto.name
+                : 'Explore novas possibilidades';
+
+        banner.querySelector('.banner-desc').textContent =
+            produto
+                ? formatPrice(produto.price) +
+                  ' · Confira as fotos, a descrição e o relatório do anúncio.'
+                : 'Seu anúncio pode ser o primeiro. ' +
+                  'Compartilhe suas peças com a comunidade.';
+
+        botao.textContent = produto
+            ? 'Explorar esta peça →'
+            : 'Anunciar uma peça →';
+
+        botao.removeAttribute('onclick');
+
+        botao.onclick = function () {
+            if (produto) {
+                openProductById(produto.id);
+            } else {
+                openModal();
+            }
+        };
+
+        arte.replaceChildren();
+
+        const imagens =
+            typeof productImages === 'function' && produto
+                ? productImages(produto)
+                : [];
+
+        if (imagens.length) {
+            const foto = document.createElement('img');
+
+            foto.src = imagens[0];
+            foto.alt = produto.name;
+
+            foto.onerror = function () {
+                arte.textContent = produto.category || 'PC';
+            };
+
+            arte.appendChild(foto);
+
+        } else {
+            arte.textContent = produto
+                ? produto.category || 'PC'
+                : 'PC';
+        }
+    }
+
+    // Atualiza também quando anúncios são criados ou excluídos.
+    const renderizarAnterior = renderHomeProducts;
+
+    renderHomeProducts = function () {
+        renderizarAnterior();
+        atualizarAcabamento();
+    };
+
+    atualizarAcabamento();
+})();
+</script>
+
 </body>
 </html>
